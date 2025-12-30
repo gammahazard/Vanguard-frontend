@@ -101,10 +101,12 @@ export default function PetsView() {
                 });
                 fetchPets();
             } else {
-                setError("Failed to save pet. Please try again.");
+                const errorData = await res.json().catch(() => ({}));
+                setSuccessMsg(`Failed to save pet: ${errorData.error || "Unknown Error"}`);
             }
         } catch (err) {
-            setError("Network error. Please try again.");
+            console.error(err);
+            setSuccessMsg(`Failed to save pet (Network/Client): ${err}`);
         }
     };
 
