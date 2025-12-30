@@ -22,9 +22,24 @@ export default function ProfileView() {
 
     useEffect(() => {
         const storedName = localStorage.getItem('vanguard_user');
-        const faceIdStatus = localStorage.getItem('vanguard_faceid_enabled');
+        const email = localStorage.getItem('vanguard_email');
         if (storedName) setUserName(storedName);
-        if (faceIdStatus === 'true') setIsFaceIdEnabled(true);
+
+        // Fetch actual status from backend
+        if (email) {
+            fetch(`${API_BASE_URL}/api/auth/check?email=${encodeURIComponent(email)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.faceid_registered) {
+                        setIsFaceIdEnabled(true);
+                        localStorage.setItem('vanguard_faceid_enabled', 'true');
+                    } else {
+                        setIsFaceIdEnabled(false);
+                        localStorage.setItem('vanguard_faceid_enabled', 'false');
+                    }
+                })
+                .catch(err => console.error("Error checking Face ID status:", err));
+        }
     }, []);
 
     const handleNavChange = (newValue: number) => {
