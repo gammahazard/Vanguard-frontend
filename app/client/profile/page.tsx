@@ -20,6 +20,7 @@ export default function ProfileView() {
     const [navValue, setNavValue] = useState(3);
     const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
     const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false); // Guard against double-clicks
     const [message, setMessage] = useState({ text: "", severity: "info", open: false });
 
     useEffect(() => {
@@ -57,12 +58,15 @@ export default function ProfileView() {
     };
 
     const handleFaceIdToggle = async () => {
+        if (isRegistering) return; // Prevent race conditions
+
         // If already enabled, show "Are you sure?" dialog instead of just toggling
         if (isFaceIdEnabled) {
             setShowDeactivateDialog(true);
             return;
         }
 
+        setIsRegistering(true);
         try {
             const email = localStorage.getItem('vanguard_email');
             if (!email) {
