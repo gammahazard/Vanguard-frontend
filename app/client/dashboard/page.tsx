@@ -33,7 +33,8 @@ import {
     CurrencyBitcoin,
     Apple,
     Celebration,
-    Info
+    Info,
+    ArrowForward
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
@@ -188,63 +189,37 @@ export default function ClientDashboard() {
                             </Stack>
                         </Box>
 
-                        {/* 4. BILLING CARD */}
-                        <Paper sx={{
-                            p: 3,
-                            borderRadius: 4,
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-                            border: '1px solid rgba(212, 175, 55, 0.15)',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
-                            <Stack spacing={2}>
-                                <Stack direction="row" alignItems="center" gap={1}>
-                                    <Wallet sx={{ color: 'primary.main', fontSize: 20 }} />
-                                    <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.1em' }} color="text.secondary">
-                                        Outstanding Balance
-                                    </Typography>
-                                </Stack>
-
-                                <Typography variant="h3" sx={{ fontWeight: 300 }}>${balance.toFixed(2)}</Typography>
-
-                                <Stack spacing={1} sx={{ mt: 1 }}>
-                                    <Button
-                                        variant="contained"
-                                        fullWidth
-                                        startIcon={<CreditCard />}
-                                        sx={{ bgcolor: '#635BFF' }} // Stripe Blurple
-                                    >
-                                        Pay with Card
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        fullWidth
-                                        startIcon={<Wallet />}
-                                        sx={{ borderColor: '#0070BA', color: '#0070BA' }} // PayPal Blue
-                                    >
-                                        PayPal
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        fullWidth
-                                        startIcon={<Apple />}
-                                        sx={{ bgcolor: 'black', color: 'white', '&:hover': { bgcolor: '#333' } }}
-                                    >
-                                        Apple Pay
-                                    </Button>
-                                </Stack>
-
-                                <Box sx={{ pt: 2, textAlign: 'center' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                                        Prefer to use cryptocurrency?
-                                    </Typography>
-                                    <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
-                                        <CurrencyBitcoin sx={{ fontSize: 16, color: '#F7931A' }} />
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                            We accept USDC, USDT, BTC, ETH
+                        {/* 4. COMPACT BILLING SNAPSHOT */}
+                        <Paper
+                            onClick={() => router.push('/client/wallet')}
+                            sx={{
+                                p: 2.5,
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                                border: '1px solid rgba(212, 175, 55, 0.15)',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack spacing={0.5}>
+                                    <Stack direction="row" alignItems="center" gap={1}>
+                                        <Wallet sx={{ color: 'primary.main', fontSize: 18 }} />
+                                        <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.1em' }} color="text.secondary">
+                                            Balance Due
                                         </Typography>
                                     </Stack>
-                                </Box>
+                                    <Typography variant="h4" sx={{ fontWeight: 700 }}>${balance.toFixed(2)}</Typography>
+                                </Stack>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    endIcon={<ArrowForward />}
+                                    sx={{ borderRadius: 2, borderColor: 'rgba(212, 175, 55, 0.3)' }}
+                                >
+                                    Details
+                                </Button>
                             </Stack>
                         </Paper>
 

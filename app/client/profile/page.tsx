@@ -7,7 +7,7 @@ import {
     List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListItemSecondaryAction, Switch, Divider, Button, Alert, Snackbar,
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel, DeleteForever, Warning } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel, DeleteForever, Warning, Wallet } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
@@ -246,7 +246,20 @@ export default function ProfileView() {
                                         </ListItemButton>
                                     </ListItem>
                                     <Divider sx={{ opacity: 0.05 }} />
-                                    <SettingsItem icon={<Notifications />} title="Push Notifications" hasSwitch={true} defaultChecked />
+                                    <SettingsItem
+                                        icon={<Notifications />}
+                                        title="Push Notifications (Coming Soon)"
+                                        hasSwitch={true}
+                                        disabled={true}
+                                        defaultChecked={false}
+                                    />
+                                    <Divider sx={{ opacity: 0.05 }} />
+                                    <SettingsItem
+                                        icon={<Wallet />}
+                                        title="Wallet & Billing"
+                                        subtitle="Manage payments and invoices"
+                                        onClick={() => router.push('/client/wallet')}
+                                    />
                                     <Divider sx={{ opacity: 0.05 }} />
                                     <SettingsItem
                                         icon={<Security />}
@@ -414,19 +427,19 @@ export default function ProfileView() {
     );
 }
 
-function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked, onClick }: any) {
+function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked, onClick, disabled }: any) {
     return (
         <ListItem disablePadding>
-            <ListItemButton onClick={onClick} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <ListItemButton disabled={disabled} onClick={onClick} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <ListItemIcon sx={{ color: 'text.secondary', minWidth: 40 }}>{icon}</ListItemIcon>
+                    <ListItemIcon sx={{ color: disabled ? 'text.disabled' : 'text.secondary', minWidth: 40 }}>{icon}</ListItemIcon>
                     <ListItemText
-                        primary={<Typography variant="body2" fontWeight="500">{title}</Typography>}
+                        primary={<Typography variant="body2" fontWeight="500" color={disabled ? 'text.disabled' : 'text.primary'}>{title}</Typography>}
                         secondary={subtitle ? <Typography variant="caption" color="text.secondary">{subtitle}</Typography> : null}
                     />
                 </Box>
                 {hasSwitch ? (
-                    <Switch edge="end" color="primary" defaultChecked={defaultChecked} />
+                    <Switch edge="end" color="primary" defaultChecked={defaultChecked} disabled={disabled} />
                 ) : (
                     <ChevronRight sx={{ color: 'text.secondary', fontSize: 20 }} />
                 )}
