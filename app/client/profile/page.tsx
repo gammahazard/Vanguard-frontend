@@ -7,7 +7,7 @@ import {
     List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListItemSecondaryAction, Switch, Divider, Button, Alert, Snackbar,
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel, DeleteForever, Warning } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
@@ -24,6 +24,8 @@ export default function ProfileView() {
     const [message, setMessage] = useState({ text: "", severity: "info", open: false });
     const [showAuditDialog, setShowAuditDialog] = useState(false);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
     const handleOpenAudit = () => {
         console.log("🔘 Security Audit Button Clicked");
@@ -147,6 +149,31 @@ export default function ProfileView() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmation !== "DELETE") return;
+        setMessage({ text: "Deleting account...", severity: "info", open: true });
+
+        try {
+            const email = localStorage.getItem('vanguard_email');
+            if (!email) return;
+
+            const res = await fetch(`${API_BASE_URL}/api/user?email=${encodeURIComponent(email)}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                // Surgical clear: Keep identity, remove session
+                localStorage.clear();
+                router.push('/');
+            } else {
+                throw new Error("Failed to delete account");
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage({ text: "Failed to delete account. Please contact support.", severity: "error", open: true });
+        }
+    };
+
     const handleConfirmDeactivate = async () => {
         setShowDeactivateDialog(false);
         try {
@@ -222,6 +249,57 @@ export default function ProfileView() {
                             </Paper>
                         </Stack>
 
+                        <Stack spacing={2}>
+                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
+                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                                <List disablePadding>
+                                    <ListItem disablePadding>
+                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
+                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
+                                            <ListItemText
+                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
+                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Stack>
+
+                        <Stack spacing={2}>
+                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
+                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                                <List disablePadding>
+                                    <ListItem disablePadding>
+                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
+                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
+                                            <ListItemText
+                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
+                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Stack>
+
+                        <Stack spacing={2}>
+                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
+                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                                <List disablePadding>
+                                    <ListItem disablePadding>
+                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
+                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
+                                            <ListItemText
+                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
+                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Stack>
+
                         <Button
                             variant="outlined"
                             color="error"
@@ -271,6 +349,49 @@ export default function ProfileView() {
                         <Button onClick={() => setShowDeactivateDialog(false)} color="inherit">Cancel</Button>
                         <Button onClick={handleConfirmDeactivate} variant="contained" color="error" sx={{ borderRadius: 2 }}>
                             Disable Face ID
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    open={showDeleteDialog}
+                    onClose={() => setShowDeleteDialog(false)}
+                    PaperProps={{ sx: { borderRadius: 3, bgcolor: '#1A1B1F', border: '1px solid rgba(239, 68, 68, 0.3)' } }}
+                >
+                    <DialogTitle sx={{ fontWeight: 'bold', color: '#ef4444', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Warning color="error" /> Delete Account?
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText color="text.secondary" sx={{ mb: 2 }}>
+                            This action is <b>IRREVERSIBLE</b>. It will permanently delete your user profile, all registered pets, booking history, and medical records.
+                        </DialogContentText>
+                        <DialogContentText color="text.secondary" sx={{ mb: 2 }}>
+                            Please type <b>DELETE</b> to confirm.
+                        </DialogContentText>
+                        <input
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '4px',
+                                border: '1px solid #ef4444',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                color: 'white'
+                            }}
+                            placeholder='Type "DELETE"'
+                            value={deleteConfirmation}
+                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setShowDeleteDialog(false)} color="inherit">Cancel</Button>
+                        <Button
+                            onClick={handleDeleteAccount}
+                            variant="contained"
+                            color="error"
+                            disabled={deleteConfirmation !== "DELETE"}
+                            sx={{ borderRadius: 2 }}
+                        >
+                            Permanently Delete
                         </Button>
                     </DialogActions>
                 </Dialog>
