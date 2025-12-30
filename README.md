@@ -6,7 +6,10 @@
 ![Backend](https://img.shields.io/badge/Backend-Rust%20🦀-orange?style=for-the-badge&logo=rust)
 ![PWA](https://img.shields.io/badge/Platform-PWA%20Mobile-blue?style=for-the-badge&logo=pwa)
 
-Vanguard is a high-end kennel management platform designed for performance, security, and a premium user experience. Built with a decoupled architecture, it leverages a high-performance Rust backend and a modern Next.js frontend.
+Vanguard is a high-end kennel management platform designed for performance, security, and a premium user experience.
+Vanguard offers 5-star care, expansive open spaces, and state-of-the-art security for your VIP (Very Important Pup), ensuring peace of mind while you travel.
+
+Built with a decoupled architecture, it leverages a high-performance Rust backend and a modern Next.js frontend.
 
 ## 🏗️ System Architecture
 
