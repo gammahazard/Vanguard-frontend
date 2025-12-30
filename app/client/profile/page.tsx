@@ -155,22 +155,31 @@ export default function ProfileView() {
 
         try {
             const email = localStorage.getItem('vanguard_email');
-            if (!email) return;
+            if (!email) {
+                // No email? Just clear and leave.
+                localStorage.clear();
+                router.push('/');
+                return;
+            }
 
             const res = await fetch(`${API_BASE_URL}/api/user?email=${encodeURIComponent(email)}`, {
                 method: 'DELETE'
             });
 
-            if (res.ok) {
-                // Surgical clear: Keep identity, remove session
+            if (res.ok || res.status === 404) {
+                // Success OR Already Gone (404)
+                if (res.status === 404) console.log("Account was already deleted (404). Cleaning up.");
+
+                // Nuclear Cleanup
                 localStorage.clear();
                 router.push('/');
             } else {
-                throw new Error("Failed to delete account");
+                const errText = await res.text();
+                throw new Error(`Failed to delete account (${res.status}): ${errText}`);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setMessage({ text: "Failed to delete account. Please contact support.", severity: "error", open: true });
+            setMessage({ text: err.message || "Failed to delete account. Please contact support.", severity: "error", open: true });
         }
     };
 
@@ -249,56 +258,6 @@ export default function ProfileView() {
                             </Paper>
                         </Stack>
 
-                        <Stack spacing={2}>
-                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
-                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
-                                <List disablePadding>
-                                    <ListItem disablePadding>
-                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
-                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
-                                            <ListItemText
-                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
-                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                </List>
-                            </Paper>
-                        </Stack>
-
-                        <Stack spacing={2}>
-                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
-                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
-                                <List disablePadding>
-                                    <ListItem disablePadding>
-                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
-                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
-                                            <ListItemText
-                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
-                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                </List>
-                            </Paper>
-                        </Stack>
-
-                        <Stack spacing={2}>
-                            <Typography variant="overline" color="error" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Danger Zone</Typography>
-                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
-                                <List disablePadding>
-                                    <ListItem disablePadding>
-                                        <ListItemButton onClick={() => setShowDeleteDialog(true)}>
-                                            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}><DeleteForever /></ListItemIcon>
-                                            <ListItemText
-                                                primary={<Typography variant="body2" fontWeight="bold" color="error">Delete Account</Typography>}
-                                                secondary={<Typography variant="caption" color="error" sx={{ opacity: 0.7 }}>Irreversibly remove all data</Typography>}
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                </List>
-                            </Paper>
-                        </Stack>
 
                         <Button
                             variant="outlined"
