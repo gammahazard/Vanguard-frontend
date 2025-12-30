@@ -36,6 +36,37 @@ graph TD
     end
 ```
 
+## 🏰 System Hierarchy & Access Levels
+
+Vanguard is built with a strictly tiered access model, ensuring that every user has exactly what they need for their specific role.
+
+```mermaid
+graph TD
+    %% Roles
+    User((Root User)) --> Owner[Owner Dashboard]
+    User --> Staff[Staff Portal]
+    User --> Client[Client Portal]
+
+    %% Owner Capabilities
+    Owner --> |Financials| Rev[Revenue & Analytics]
+    Owner --> |Security| Audit[Global Audit Logs]
+    Owner --> |Users| Management[Staff & Client Management]
+
+    %% Staff Capabilities
+    Staff --> |Care| Feeding[Feeding & Medication]
+    Staff --> |Operations| Bookings[Booking Confirmation]
+    Staff --> |Support| ChatStaff[Client Messenger]
+
+    %% Client Capabilities
+    Client --> |Pets| PetProfiles[VIP Pet Profiles]
+    Client --> |Bookings| Reservation[New Stay Requests]
+    Client --> |Trust| Cam[Live Kennel Cams]
+    Client --> |Support| ChatClient[Staff Messenger]
+
+    %% Interactions
+    ChatStaff <--> ChatClient
+```
+
 ## 🔒 Security Flow
 
 Vanguard employs a defense-in-depth strategy to ensure user data remains private.
