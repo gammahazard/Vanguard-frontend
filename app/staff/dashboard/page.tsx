@@ -79,8 +79,11 @@ export default function StaffDashboard() {
     };
 
     const handleLogout = () => {
-        localStorage.clear();
-        router.push('/');
+        // Surgical clear
+        localStorage.removeItem('vanguard_token');
+        localStorage.removeItem('vanguard_role');
+        localStorage.removeItem('vanguard_user');
+        router.push('/client/login');
     };
 
     return (
