@@ -658,11 +658,11 @@ function IPLocation({ ip }: { ip: string }) {
         }
 
         const timer = setTimeout(() => {
-            fetch(`http://ip-api.com/json/${ip}`)
+            fetch(`https://ipwho.is/${ip}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        const loc = `${data.city}, ${data.countryCode}`;
+                    if (data.success) {
+                        const loc = `${data.city}, ${data.country_code}`;
                         ipLocationCache[ip] = loc;
                         setLocation(loc);
                     }
