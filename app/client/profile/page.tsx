@@ -25,11 +25,16 @@ export default function ProfileView() {
         const email = localStorage.getItem('vanguard_email');
         if (storedName) setUserName(storedName);
 
-        // Fetch actual status from backend
+        // Fetch actual status from backend to force-sync the slider
         if (email) {
+            console.log("🔍 Checking Face ID status for:", email);
             fetch(`${API_BASE_URL}/api/auth/check?email=${encodeURIComponent(email)}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error("Status check failed");
+                    return res.json();
+                })
                 .then(data => {
+                    console.log("✅ Face ID status received:", data);
                     if (data.faceid_registered) {
                         setIsFaceIdEnabled(true);
                         localStorage.setItem('vanguard_faceid_enabled', 'true');
@@ -38,7 +43,7 @@ export default function ProfileView() {
                         localStorage.setItem('vanguard_faceid_enabled', 'false');
                     }
                 })
-                .catch(err => console.error("Error checking Face ID status:", err));
+                .catch(err => console.error("❌ Error checking Face ID status:", err));
         }
     }, []);
 
@@ -50,9 +55,9 @@ export default function ProfileView() {
     };
 
     const handleFaceIdToggle = async () => {
+        // If already enabled, don't try to register again
         if (isFaceIdEnabled) {
-            localStorage.setItem('vanguard_faceid_enabled', 'false');
-            setIsFaceIdEnabled(false);
+            setMessage({ text: "Face ID is already active for this account.", severity: "info", open: true });
             return;
         }
 
@@ -63,6 +68,8 @@ export default function ProfileView() {
                 return;
             }
 
+            console.log("🚀 Starting Face ID Registration for:", email);
+
             // 1. Get challenge
             const resStart = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/start`, {
                 method: 'POST',
@@ -70,11 +77,26 @@ export default function ProfileView() {
                 body: JSON.stringify({ email })
             });
 
-            if (!resStart.ok) throw new Error("Failed to start biometric registration");
+            if (!resStart.ok) {
+                const errData = await resStart.text();
+                throw new Error(`Server rejected registration start: ${errData}`);
+            }
+
             const options = await resStart.json();
+            console.log("📦 Challenge received:", options);
 
             // 2. Browser prompt
-            const attResp = await startRegistration(options.public_key);
+            console.log("🔔 Opening Biometric Prompt...");
+            let attResp;
+            try {
+                // Pass the public_key part directly
+                attResp = await startRegistration(options.public_key);
+            } catch (promptErr: any) {
+                console.error("❌ Biometric Prompt Crash:", promptErr);
+                throw new Error(`Biometric prompt failed: ${promptErr.message || "Unknown error"}`);
+            }
+
+            console.log("✅ Biometric Response received:", attResp);
 
             // 3. Verify
             const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/finish`, {
@@ -88,11 +110,12 @@ export default function ProfileView() {
                 localStorage.setItem('vanguard_faceid_enabled', 'true');
                 setMessage({ text: "Face ID Registered Successfully!", severity: "success", open: true });
             } else {
-                throw new Error("Verification failed on server");
+                const errFinish = await resFinish.text();
+                throw new Error(`Server verification failed: ${errFinish}`);
             }
 
         } catch (err: any) {
-            console.error(err);
+            console.error("🆘 Registration Error:", err);
             setMessage({ text: err.message || "Registration failed", severity: "error", open: true });
         }
     };
