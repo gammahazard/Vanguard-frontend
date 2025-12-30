@@ -283,36 +283,17 @@ export default function ClientLogin() {
                             </Button>
                         </Stack>
 
-                        {faceIdAvailable && (
-                            <>
-                                <Divider sx={{ width: '100%', opacity: 0.1 }}>OR</Divider>
-
-                                <Button
-                                    fullWidth
-                                    variant="outlined"
-                                    startIcon={<Face />}
-                                    onClick={handleFaceIdLogin}
-                                    sx={{
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        color: 'text.secondary',
-                                        py: 1.5,
-                                        '&:hover': {
-                                            borderColor: '#fff',
-                                            color: '#fff'
-                                        }
-                                    }}
-                                >
-                                    Log in with Face ID
-                                </Button>
-                            </>
-                        )}
-
-                        <Stack direction="row" spacing={1}>
-                            <Typography variant="caption" color="text.secondary">
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="center"
+                            sx={{ mt: 2, width: '100%' }}
+                        >
+                            <Typography variant="body2" color="text.secondary">
                                 New here?
                             </Typography>
                             <Link href="/client/signup" style={{ textDecoration: 'none' }}>
-                                <Typography variant="caption" color="primary" fontWeight="bold">
+                                <Typography variant="body2" color="primary" fontWeight="bold">
                                     Create Account
                                 </Typography>
                             </Link>
