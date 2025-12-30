@@ -33,7 +33,8 @@ export default function PetsView() {
         allergies: "",
         notes: "",
         vet_name: "",
-        vet_phone: ""
+        vet_phone: "",
+        image_url: ""
     });
 
     const handleNavChange = (newValue: number) => {
@@ -84,7 +85,7 @@ export default function PetsView() {
                     weight: parseFloat(formData.weight) || 0,
                     temperament: formData.temperament,
                     allergies: formData.allergies || null,
-                    image_url: null, // Placeholder or Upload later
+                    image_url: formData.image_url || null,
                     notes: formData.notes || null,
                     vet_name: formData.vet_name || null,
                     vet_phone: formData.vet_phone || null
@@ -96,7 +97,7 @@ export default function PetsView() {
                 setShowAddModal(false);
                 setFormData({
                     name: "", breed: "", age: "", weight: "", temperament: "", allergies: "",
-                    notes: "", vet_name: "", vet_phone: ""
+                    notes: "", vet_name: "", vet_phone: "", image_url: ""
                 });
                 fetchPets();
             } else {
@@ -180,6 +181,16 @@ export default function PetsView() {
                                     label="Weight (kg)" fullWidth variant="filled" type="number"
                                     value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                                 />
+                            </Stack>
+
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <TextField
+                                    label="Photo URL (Optional)" fullWidth variant="filled" placeholder="https://example.com/dog.jpg"
+                                    value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                />
+                                <Button disabled variant="outlined" sx={{ height: 56, minWidth: 100 }}>
+                                    Upload
+                                </Button>
                             </Stack>
                             <TextField
                                 label="Temperament (e.g. Friendly, Shy)" fullWidth variant="filled"
