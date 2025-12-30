@@ -110,9 +110,17 @@ export default function ClientLogin() {
                 throw new Error(errorText || "No Face ID found for this account.");
             }
             const options = await resStart.json();
-            // Flattened response support: use the whole object if publicKey is missing
-            const authOptions = options.publicKey || options.public_key || options;
-            const attResp = await startAuthentication(authOptions);
+            console.log("📦 WebAuthn Challenge:", options);
+
+            // Standardize the options for the browser
+            const authOptions = options.publicKey || options;
+
+            // CRITICAL: Remove extra fields that are NOT part of the WebAuthn spec
+            // to avoid confusing the browser/library
+            const cleanOptions = { ...authOptions };
+            if (cleanOptions.challenge_id) delete (cleanOptions as any).challenge_id;
+
+            const attResp = await startAuthentication(cleanOptions);
 
             const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/login/finish`, {
                 method: 'POST',

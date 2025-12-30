@@ -91,9 +91,14 @@ export default function ProfileView() {
             console.log("🔔 Opening Biometric Prompt...");
             let attResp;
             try {
-                // Support both flattened and wrapped responses
-                const authOptions = options.publicKey || options.public_key || options;
-                attResp = await startRegistration(authOptions);
+                // Standardize the options for the browser
+                const authOptions = options.publicKey || options;
+
+                // CRITICAL: Remove extra fields that are NOT part of the WebAuthn spec
+                const cleanOptions = { ...authOptions };
+                if (cleanOptions.challenge_id) delete (cleanOptions as any).challenge_id;
+
+                attResp = await startRegistration(cleanOptions);
             } catch (promptErr: any) {
                 console.error("❌ Biometric Prompt Crash:", promptErr);
                 throw new Error(`Biometric prompt failed: ${promptErr.message || "Unknown error"}`);
