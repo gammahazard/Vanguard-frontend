@@ -31,7 +31,7 @@ export default function BookingsView() {
 
     // Form State
     const [formData, setFormData] = useState({
-        dog_id: "",
+        dog_ids: [] as string[],
         service_type: "Boarding",
         start_date: "",
         end_date: "",
@@ -86,9 +86,11 @@ export default function BookingsView() {
             if (formData.service_type === "Grooming") dailyRate = 65;
             if (formData.service_type === "Daycare") dailyRate = 35;
 
-            setFormData(prev => ({ ...prev, total_price: diffDays * dailyRate }));
+            let total = diffDays * dailyRate * (formData.dog_ids.length || 1);
+
+            setFormData(prev => ({ ...prev, total_price: total }));
         }
-    }, [formData.start_date, formData.end_date, formData.service_type]);
+    }, [formData.start_date, formData.end_date, formData.service_type, formData.dog_ids]);
 
     const handleNext = () => setActiveStep((prev) => prev + 1);
     const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -110,7 +112,7 @@ export default function BookingsView() {
                 setSuccessMsg("Reservation confirmed! 🍾");
                 setShowWizard(false);
                 setActiveStep(0);
-                setFormData({ dog_id: "", service_type: "Boarding", start_date: "", end_date: "", notes: "", total_price: 0 });
+                setFormData({ dog_ids: [], service_type: "Boarding", start_date: "", end_date: "", notes: "", total_price: 0 });
                 fetchData();
             } else {
                 setError("Failed to create reservation. Please try again.");
@@ -221,25 +223,37 @@ export default function BookingsView() {
                                     </Box>
                                 ) : (
                                     <Stack spacing={1.5} sx={{ mt: 2 }}>
-                                        {pets.map(pet => (
-                                            <Paper
-                                                key={pet.id}
-                                                onClick={() => setFormData(f => ({ ...f, dog_id: pet.id }))}
-                                                sx={{
-                                                    p: 2, borderRadius: 2, cursor: 'pointer',
-                                                    border: formData.dog_id === pet.id ? '2px solid #D4AF37' : '1px solid rgba(255,255,255,0.1)',
-                                                    bgcolor: formData.dog_id === pet.id ? 'rgba(212, 175, 55, 0.05)' : 'transparent'
-                                                }}
-                                            >
-                                                <Stack direction="row" spacing={2} alignItems="center">
-                                                    <Avatar src={pet.image_url} sx={{ bgcolor: 'primary.main' }}>{pet.name[0]}</Avatar>
-                                                    <Box>
-                                                        <Typography variant="body1" fontWeight="bold">{pet.name}</Typography>
-                                                        <Typography variant="caption" color="text.secondary">{pet.breed}</Typography>
-                                                    </Box>
-                                                </Stack>
-                                            </Paper>
-                                        ))}
+                                        {pets.map(pet => {
+                                            const isSelected = formData.dog_ids.includes(pet.id);
+                                            return (
+                                                <Paper
+                                                    key={pet.id}
+                                                    onClick={() => {
+                                                        setFormData(f => ({
+                                                            ...f,
+                                                            dog_ids: isSelected
+                                                                ? f.dog_ids.filter(id => id !== pet.id)
+                                                                : [...f.dog_ids, pet.id]
+                                                        }));
+                                                    }}
+                                                    sx={{
+                                                        p: 2, borderRadius: 2, cursor: 'pointer',
+                                                        border: isSelected ? '2px solid #D4AF37' : '1px solid rgba(255,255,255,0.1)',
+                                                        bgcolor: isSelected ? 'rgba(212, 175, 55, 0.05)' : 'transparent',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                >
+                                                    <Stack direction="row" spacing={2} alignItems="center">
+                                                        <Avatar src={pet.image_url} sx={{ bgcolor: 'primary.main', border: isSelected ? '2px solid #D4AF37' : 'none' }}>{pet.name[0]}</Avatar>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography variant="body1" fontWeight="bold">{pet.name}</Typography>
+                                                            <Typography variant="caption" color="text.secondary">{pet.breed}</Typography>
+                                                        </Box>
+                                                        {isSelected && <CheckCircle sx={{ color: '#D4AF37' }} fontSize="small" />}
+                                                    </Stack>
+                                                </Paper>
+                                            );
+                                        })}
                                     </Stack>
                                 )}
                             </Box>
@@ -288,7 +302,9 @@ export default function BookingsView() {
                                     <Typography variant="h6">Ready to book?</Typography>
                                     <Divider sx={{ my: 2 }} />
                                     <Stack spacing={1} textAlign="left">
-                                        <Typography variant="body2" color="text.secondary">VIP: <strong>{pets.find(p => p.id === formData.dog_id)?.name}</strong></Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            VIPs: <strong>{pets.filter(p => formData.dog_ids.includes(p.id)).map(p => p.name).join(", ")}</strong>
+                                        </Typography>
                                         <Typography variant="body2" color="text.secondary">Service: <strong>{formData.service_type}</strong></Typography>
                                         <Typography variant="body2" color="text.secondary">Dates: <strong>{formData.start_date}</strong> to <strong>{formData.end_date}</strong></Typography>
                                     </Stack>
@@ -311,7 +327,7 @@ export default function BookingsView() {
                         {activeStep < 2 ? (
                             <Button
                                 variant="contained" endIcon={<ArrowForward />}
-                                disabled={!formData.dog_id || (activeStep === 1 && (!formData.start_date || !formData.end_date))}
+                                disabled={formData.dog_ids.length === 0 || (activeStep === 1 && (!formData.start_date || !formData.end_date))}
                                 onClick={handleNext}
                                 sx={{ bgcolor: '#D4AF37', color: 'black', '&:hover': { bgcolor: '#b5952f' } }}
                             >
