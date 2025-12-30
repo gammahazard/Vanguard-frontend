@@ -25,6 +25,10 @@ export default function ProfileView() {
     const [message, setMessage] = useState({ text: "", severity: "info", open: false });
     const [showAuditDialog, setShowAuditDialog] = useState(false);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [auditPage, setAuditPage] = useState(1);
+    const [auditTotal, setAuditTotal] = useState(0);
+    const [suspiciousCount, setSuspiciousCount] = useState(0);
+
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
@@ -34,16 +38,28 @@ export default function ProfileView() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [profileData, setProfileData] = useState<any>(null);
 
-    const handleOpenAudit = () => {
-        console.log("🔘 Security Audit Button Clicked");
-        setMessage({ text: "Fetching security logs...", severity: "info", open: true });
+    const fetchAuditLogs = (page: number) => {
         const email = localStorage.getItem('vanguard_email');
-        if (email) {
-            fetch(`${API_BASE_URL}/api/user/security-logs?email=${encodeURIComponent(email)}`)
-                .then(res => res.json())
-                .then(data => setAuditLogs(data))
-                .catch(err => console.error("Failed to fetch logs", err));
-        }
+        if (!email) return;
+
+        fetch(`${API_BASE_URL}/api/user/security-logs?email=${encodeURIComponent(email)}&page=${page}&limit=5`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.logs) {
+                    setAuditLogs(data.logs);
+                    setAuditTotal(data.total);
+                    setSuspiciousCount(data.suspicious_count);
+                } else {
+                    // Fallback for old API if needed during transition
+                    setAuditLogs(Array.isArray(data) ? data : []);
+                }
+            })
+            .catch(err => console.error("Failed to fetch logs", err));
+    };
+
+    const handleOpenAudit = () => {
+        setAuditPage(1);
+        fetchAuditLogs(1);
         setShowAuditDialog(true);
     };
 
@@ -77,6 +93,9 @@ export default function ProfileView() {
                 .then(res => res.json())
                 .then(data => setProfileData(data))
                 .catch(err => console.error("❌ Error fetching profile:", err));
+
+            // Fetch initial audit logs for badge
+            fetchAuditLogs(1);
         }
     }, []);
 
@@ -353,6 +372,11 @@ export default function ProfileView() {
                                         title="Security Audit"
                                         subtitle="View recent login activity"
                                         onClick={handleOpenAudit}
+                                        badge={suspiciousCount > 0 ? (
+                                            <Box sx={{ bgcolor: '#ef4444', color: 'white', borderRadius: '12px', px: 0.8, py: 0.2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 'bold', mr: 1, minWidth: 20 }}>
+                                                {suspiciousCount}
+                                            </Box>
+                                        ) : null}
                                     />
                                 </List>
                             </Paper>
@@ -496,7 +520,34 @@ export default function ProfileView() {
                             )}
                         </List>
                     </DialogContent>
-                    <DialogActions sx={{ p: 2 }}>
+                    <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 1 }}>
+                            <Button
+                                size="small"
+                                disabled={auditPage <= 1}
+                                onClick={() => {
+                                    const newPage = auditPage - 1;
+                                    setAuditPage(newPage);
+                                    fetchAuditLogs(newPage);
+                                }}
+                            >
+                                Prev
+                            </Button>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: 60, textAlign: 'center' }}>
+                                Page {auditPage} of {Math.ceil(auditTotal / 5) || 1}
+                            </Typography>
+                            <Button
+                                size="small"
+                                disabled={auditPage >= (Math.ceil(auditTotal / 5) || 1)}
+                                onClick={() => {
+                                    const newPage = auditPage + 1;
+                                    setAuditPage(newPage);
+                                    fetchAuditLogs(newPage);
+                                }}
+                            >
+                                Next
+                            </Button>
+                        </Stack>
                         <Button onClick={() => setShowAuditDialog(false)} color="primary">Close</Button>
                     </DialogActions>
                 </Dialog>
@@ -561,7 +612,7 @@ export default function ProfileView() {
     );
 }
 
-function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked, onClick, disabled }: any) {
+function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked, onClick, disabled, badge }: any) {
     return (
         <ListItem disablePadding>
             <ListItemButton disabled={disabled} onClick={onClick} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -575,7 +626,10 @@ function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked, onClic
                 {hasSwitch ? (
                     <Switch edge="end" color="primary" defaultChecked={defaultChecked} disabled={disabled} />
                 ) : (
-                    <ChevronRight sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Stack direction="row" alignItems="center">
+                        {badge}
+                        <ChevronRight sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    </Stack>
                 )}
             </ListItemButton>
         </ListItem>
