@@ -31,20 +31,56 @@ import {
     Wallet,
     CreditCard,
     CurrencyBitcoin,
-    Apple
+    Apple,
+    Celebration,
+    Info
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ClientDashboard() {
     const router = useRouter();
     const [userName, setUserName] = useState("Guest");
     const [navValue, setNavValue] = useState(0);
+    const [balance, setBalance] = useState(0);
+    const [nextStay, setNextStay] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const storedName = localStorage.getItem('vanguard_user');
         if (storedName) setUserName(storedName);
+        fetchDashboardData();
     }, []);
+
+    const fetchDashboardData = async () => {
+        const email = localStorage.getItem('vanguard_email');
+        if (!email) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/bookings?email=${encodeURIComponent(email)}`);
+            if (res.ok) {
+                const bookings = await res.json();
+
+                // Calculate Balance: Sum of Confirmed bookings
+                const total = bookings
+                    .filter((b: any) => b.status === "Confirmed")
+                    .reduce((sum: number, b: any) => sum + b.total_price, 0);
+                setBalance(total);
+
+                // Find next stay: nearest future date
+                const upcoming = bookings
+                    .filter((b: any) => b.status !== "Completed" && b.status !== "Cancelled")
+                    .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+
+                if (upcoming.length > 0) setNextStay(upcoming[0]);
+            }
+        } catch (err) {
+            console.error("Home fetch failed", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleNavChange = (event: any, newValue: number) => {
         setNavValue(newValue);
@@ -128,13 +164,37 @@ export default function ClientDashboard() {
                             </Box>
                         </Paper>
 
-                        {/* 3. DAILY HIGHLIGHTS (Horizontal Scroll) */}
+                        {/* 3. NEXT STAY QUICK VIEW */}
+                        {nextStay && (
+                            <Paper sx={{
+                                p: 2.5,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(212, 175, 55, 0.05)',
+                                border: '1px solid rgba(212, 175, 55, 0.2)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box sx={{ p: 1.5, bgcolor: '#D4AF37', borderRadius: 3, display: 'flex' }}>
+                                        <Celebration sx={{ color: 'black' }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="primary" fontWeight="bold">UPCOMING ADVENTURE</Typography>
+                                        <Typography variant="body1" fontWeight="bold">
+                                            {nextStay.service_type} stay starts in {Math.ceil((new Date(nextStay.start_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days!
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+                        )}
+
+                        {/* 4. DAILY HIGHLIGHTS (Horizontal Scroll) */}
                         <Box>
                             <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.1em', pl: 1 }}>
                                 Today's Highlights
                             </Typography>
                             <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1, mx: -2, px: 2, mt: 1, '::-webkit-scrollbar': { display: 'none' } }}>
-
+                                {/* Dynamic logic could go here, for now keeping mock */}
                                 <HighlightCard
                                     icon={<Restaurant sx={{ color: '#4ade80' }} />}
                                     time="08:30 AM"
@@ -149,11 +209,10 @@ export default function ClientDashboard() {
                                 />
                                 <HighlightCard
                                     icon={<Bedtime sx={{ color: '#a78bfa' }} />}
-                                    time="02:00 PM"
-                                    title="Nap"
-                                    desc="Resting"
+                                    time="Grooming"
+                                    title="Ready!"
+                                    desc="Next Appointment"
                                 />
-
                             </Stack>
                         </Box>
 
@@ -174,7 +233,7 @@ export default function ClientDashboard() {
                                     </Typography>
                                 </Stack>
 
-                                <Typography variant="h3" sx={{ fontWeight: 300 }}>$0.00</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 300 }}>${balance.toFixed(2)}</Typography>
 
                                 <Stack spacing={1} sx={{ mt: 1 }}>
                                     <Button
