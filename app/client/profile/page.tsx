@@ -89,8 +89,9 @@ export default function ProfileView() {
             console.log("🔔 Opening Biometric Prompt...");
             let attResp;
             try {
-                // Pass the public_key part directly
-                attResp = await startRegistration(options.public_key);
+                // Support both flattened and wrapped responses for backward compatibility
+                const authOptions = options.publicKey || options.public_key;
+                attResp = await startRegistration(authOptions);
             } catch (promptErr: any) {
                 console.error("❌ Biometric Prompt Crash:", promptErr);
                 throw new Error(`Biometric prompt failed: ${promptErr.message || "Unknown error"}`);

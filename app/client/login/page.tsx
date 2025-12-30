@@ -93,7 +93,7 @@ export default function ClientLogin() {
             }
             const options = await resStart.json();
 
-            const attResp = await startAuthentication(options.public_key);
+            const attResp = await startAuthentication(options.publicKey || options.public_key);
 
             const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/login/finish`, {
                 method: 'POST',
