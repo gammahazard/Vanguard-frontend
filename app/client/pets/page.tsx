@@ -331,7 +331,7 @@ function PetCard({ pet, onDelete }: any) {
             </Button>
 
             <Stack direction="row" alignItems="center" gap={2} mb={2}>
-                <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main', fontSize: '1.5rem', fontWeight: 'bold' }}>{pet.name[0]}</Avatar>
+                <Avatar src={pet.image_url} sx={{ width: 60, height: 60, bgcolor: 'primary.main', fontSize: '1.5rem', fontWeight: 'bold' }}>{pet.name[0]}</Avatar>
                 <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" fontWeight="bold">{pet.name}</Typography>
                     <Typography variant="body2" color="text.secondary">{pet.breed}</Typography>
