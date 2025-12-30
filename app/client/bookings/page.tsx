@@ -342,7 +342,15 @@ function PastBookingCard({ booking, pets }: any) {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Avatar src={pet?.image_url} sx={{ width: 30, height: 30, fontSize: '0.8rem' }}>{pet?.name[0]}</Avatar>
-                    <Box><Typography variant="body2" fontWeight="500">{booking.service_type}</Typography><Typography variant="caption" color="text.secondary">{booking.start_date}</Typography></Box>
+                    <Box>
+                        <Typography variant="body2" fontWeight="500">{booking.service_type}</Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography variant="caption" color="text.secondary">{booking.start_date}</Typography>
+                            {booking.status === 'Cancelled' && (
+                                <Chip label="Cancelled" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 'bold' }} />
+                            )}
+                        </Stack>
+                    </Box>
                 </Box>
                 <Typography variant="caption" fontWeight="bold">${booking.total_price.toFixed(2)}</Typography>
             </Stack>
