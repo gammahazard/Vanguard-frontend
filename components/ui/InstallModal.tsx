@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Share, PlusSquare, Menu, Smartphone, X } from "lucide-react";
+import { Download, Share, AddBox, Menu, Smartphone, Close } from "@mui/icons-material";
 import { useState } from "react";
 
 interface InstallModalProps {
@@ -36,7 +36,7 @@ export function InstallModal({ isOpen, onClose }: InstallModalProps) {
 
                             {/* Close Button */}
                             <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
-                                <X className="w-5 h-5" />
+                                <Close className="w-5 h-5" />
                             </button>
 
                             <div className="text-center mb-8">
@@ -76,7 +76,7 @@ export function InstallModal({ isOpen, onClose }: InstallModalProps) {
                                         <div className="w-px h-4 bg-white/10 ml-4"></div>
                                         <div className="flex items-center gap-4">
                                             <div className="w-8 h-8 bg-gray-500/10 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
-                                                <PlusSquare className="w-4 h-4" />
+                                                <AddBox className="w-4 h-4" />
                                             </div>
                                             <p className="text-sm text-gray-300">2. Scroll down and tap <span className="text-white font-bold">Add to Home Screen</span>.</p>
                                         </div>

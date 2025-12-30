@@ -1,14 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, LucideIcon } from "lucide-react";
-import React from "react";
+import { ArrowForward } from "@mui/icons-material";
+import React, { ElementType } from "react";
 
 interface PremiumButtonProps {
     children: React.ReactNode;
     onClick?: () => void;
     link?: string;
-    icon?: LucideIcon;
+    icon?: ElementType;
     variant?: "primary" | "secondary" | "outline";
     className?: string;
 }

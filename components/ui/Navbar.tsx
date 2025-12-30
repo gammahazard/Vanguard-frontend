@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, Close, ArrowForward } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import { PremiumButton } from "./PremiumButton";
 
@@ -54,7 +54,7 @@ export function Navbar() {
                         className="md:hidden z-50 relative text-white p-2"
                         onClick={() => setIsOpen(!isOpen)}
                     >
-                        {isOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+                        {isOpen ? <Close className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
                     </button>
                 </div>
             </nav>

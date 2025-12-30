@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, PawPrint } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pets as PawPrint } from "@mui/icons-material";
 
 const SLIDES = [
     {
