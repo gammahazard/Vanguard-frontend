@@ -133,8 +133,8 @@ export default function ClientSignup() {
 
                             {/* Form */}
                             <Stack spacing={3}>
-                                <Grid container spacing={2}>
-                                    <Grid xs={12} sm={6}>
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                    <Box sx={{ width: '100%' }}>
                                         <TextField
                                             fullWidth
                                             placeholder="Full Name"
@@ -142,8 +142,8 @@ export default function ClientSignup() {
                                             onChange={(e) => setName(e.target.value)}
                                             InputProps={{ startAdornment: <Person sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} /> }}
                                         />
-                                    </Grid>
-                                    <Grid xs={12} sm={6}>
+                                    </Box>
+                                    <Box sx={{ width: '100%' }}>
                                         <TextField
                                             fullWidth
                                             placeholder="Phone"
@@ -151,8 +151,8 @@ export default function ClientSignup() {
                                             onChange={(e) => setPhone(e.target.value)}
                                             InputProps={{ startAdornment: <Phone sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} /> }}
                                         />
-                                    </Grid>
-                                </Grid>
+                                    </Box>
+                                </Stack>
 
                                 <TextField
                                     fullWidth

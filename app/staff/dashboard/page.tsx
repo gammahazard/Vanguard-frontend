@@ -109,9 +109,9 @@ export default function StaffDashboard() {
                         />
                     </Stack>
 
-                    <Grid container spacing={4}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
                         {/* LEFT COLUMN: Main Feed */}
-                        <Grid xs={12} md={8}>
+                        <Box sx={{ flex: 2, minWidth: 0 }}>
                             {/* OWNER VIEW: SECURITY LOGS */}
                             {role === 'owner' && (
                                 <Paper sx={{ p: 3, mb: 4, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212, 175, 55, 0.1)' }}>
@@ -163,10 +163,10 @@ export default function StaffDashboard() {
                                     )}
                                 </List>
                             </Paper>
-                        </Grid>
+                        </Box>
 
                         {/* RIGHT COLUMN: Quick Stats */}
-                        <Grid xs={12} md={4}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Stack spacing={3}>
                                 <Paper sx={{ p: 3, bgcolor: 'rgba(5,6,8,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}>
                                     <Typography variant="subtitle2" color="text.secondary">ACTIVE GUESTS</Typography>
@@ -182,8 +182,8 @@ export default function StaffDashboard() {
                                     </Paper>
                                 )}
                             </Stack>
-                        </Grid>
-                    </Grid>
+                        </Box>
+                    </Stack>
                 </Container>
             </Box>
         </ThemeProvider>
