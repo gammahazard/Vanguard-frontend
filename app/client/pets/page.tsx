@@ -7,7 +7,7 @@ import {
     Fab, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Grid,
     CircularProgress, Snackbar, Alert
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes, Close, DeleteForever } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { API_BASE_URL } from "@/lib/config";
 import Link from "next/link";
@@ -22,6 +22,11 @@ export default function PetsView() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [error, setError] = useState("");
     const [succcessMsg, setSuccessMsg] = useState("");
+
+    // Deletion state
+    const [petToDelete, setPetToDelete] = useState<any | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -110,6 +115,34 @@ export default function PetsView() {
         }
     };
 
+    const handleDeletePet = async () => {
+        if (!petToDelete) return;
+        const email = localStorage.getItem('vanguard_email');
+        if (!email) return;
+
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/pets/${petToDelete.id}?email=${encodeURIComponent(email)}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setSuccessMsg("Pet removed successfully.");
+                setShowDeleteConfirm(false);
+                setPetToDelete(null);
+                fetchPets();
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                setError(`Failed to remove pet: ${errorData.error || "Unknown Error"}`);
+            }
+        } catch (err) {
+            console.error(err);
+            setError(`Failed to remove pet: ${err}`);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -141,7 +174,14 @@ export default function PetsView() {
                     ) : (
                         <Stack spacing={2}>
                             {pets.map((pet) => (
-                                <PetCard key={pet.id} pet={pet} />
+                                <PetCard
+                                    key={pet.id}
+                                    pet={pet}
+                                    onDelete={() => {
+                                        setPetToDelete(pet);
+                                        setShowDeleteConfirm(true);
+                                    }}
+                                />
                             ))}
                         </Stack>
                     )}
@@ -236,6 +276,30 @@ export default function PetsView() {
                     <Alert severity="success" variant="filled">{succcessMsg}</Alert>
                 </Snackbar>
 
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 3 } }}>
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <DeleteForever color="error" /> Remove VIP?
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText color="text.secondary">
+                            Are you sure you want to remove <strong>{petToDelete?.name}</strong>? This action cannot be undone.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setShowDeleteConfirm(false)} color="inherit" disabled={isDeleting}>Cancel</Button>
+                        <Button
+                            onClick={handleDeletePet}
+                            variant="contained"
+                            color="error"
+                            disabled={isDeleting}
+                            startIcon={isDeleting ? <CircularProgress size={20} color="inherit" /> : null}
+                        >
+                            {isDeleting ? "Removing..." : "Remove Pet"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
                 {/* Bottom Nav */}
                 <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }} elevation={3}>
                     <BottomNavigation
@@ -255,9 +319,17 @@ export default function PetsView() {
     );
 }
 
-function PetCard({ pet }: any) {
+function PetCard({ pet, onDelete }: any) {
     return (
-        <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+            <Button
+                size="small"
+                sx={{ position: 'absolute', top: 8, right: 8, minWidth: 0, p: 0.5, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                onClick={onDelete}
+            >
+                <Close fontSize="small" />
+            </Button>
+
             <Stack direction="row" alignItems="center" gap={2} mb={2}>
                 <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main', fontSize: '1.5rem', fontWeight: 'bold' }}>{pet.name[0]}</Avatar>
                 <Box sx={{ flex: 1 }}>
