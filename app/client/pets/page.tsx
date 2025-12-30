@@ -258,44 +258,42 @@ function PetCard({ pet }: any) {
                 <Chip label="At Home" size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
             </Stack>
 
-            <Grid container spacing={1}>
+            <Stack spacing={1}>
                 {/* Visual Stats */}
-                <Grid item xs={6}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                <Stack direction="row" spacing={1}>
+                    <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Scale fontSize="small" color="disabled" />
                         <Typography variant="body2" color="text.secondary">{pet.weight} kg</Typography>
-                    </Stack>
-                </Grid>
-                <Grid item xs={6}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                    </Box>
+                    <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Pets fontSize="small" color="disabled" />
                         <Typography variant="body2" color="text.secondary" noWrap>{pet.temperament}</Typography>
-                    </Stack>
-                </Grid>
+                    </Box>
+                </Stack>
 
                 {/* Vet / Medical */}
                 {(pet.vet_name || pet.notes) && (
-                    <Grid item xs={12}>
-                        <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                        <Stack direction="row" spacing={1} alignItems="flex-start">
                             <MedicalServices fontSize="small" color="primary" sx={{ mt: 0.3 }} />
                             <Box>
                                 {pet.vet_name && <Typography variant="caption" display="block" color="text.secondary">Vet: {pet.vet_name} {pet.vet_phone && `(${pet.vet_phone})`}</Typography>}
                                 {pet.notes && <Typography variant="caption" display="block" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>"{pet.notes}"</Typography>}
                             </Box>
                         </Stack>
-                    </Grid>
+                    </Box>
                 )}
 
                 {/* Allergies Warning */}
                 {pet.allergies && (
-                    <Grid item xs={12}>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', p: 1, borderRadius: 2 }}>
+                    <Box sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', p: 1, borderRadius: 2 }}>
+                        <Stack direction="row" spacing={1} alignItems="center">
                             <Typography variant="caption" color="error" fontWeight="bold">⚠️ Allergies:</Typography>
                             <Typography variant="caption" color="error">{pet.allergies}</Typography>
                         </Stack>
-                    </Grid>
+                    </Box>
                 )}
-            </Grid>
+            </Stack>
         </Paper>
     );
 }
