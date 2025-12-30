@@ -180,6 +180,28 @@ export default function ClientLogin() {
                 <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
                     <Stack spacing={4} alignItems="center">
 
+                        {/* FACE ID BUTTON - Very Top if available! */}
+                        {faceIdAvailable && (
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                size="large"
+                                startIcon={<Face />}
+                                onClick={handleFaceIdLogin}
+                                sx={{
+                                    py: 2,
+                                    bgcolor: 'primary.main',
+                                    color: '#000',
+                                    fontWeight: 'bold',
+                                    borderRadius: 3,
+                                    mb: -2,
+                                    '&:hover': { bgcolor: '#fff' }
+                                }}
+                            >
+                                Fast Login with Face ID
+                            </Button>
+                        )}
+
                         {/* Logo */}
                         <Box sx={{
                             width: 80,
@@ -205,26 +227,6 @@ export default function ClientLogin() {
                         </Box>
 
                         <Stack spacing={3} width="100%">
-                            {/* FACE ID BUTTON - Move it to the TOP if available! */}
-                            {faceIdAvailable && (
-                                <Button
-                                    fullWidth
-                                    variant="contained"
-                                    size="large"
-                                    startIcon={<Face />}
-                                    onClick={handleFaceIdLogin}
-                                    sx={{
-                                        py: 2,
-                                        bgcolor: 'primary.main',
-                                        color: '#000',
-                                        fontWeight: 'bold',
-                                        '&:hover': { bgcolor: '#fff' }
-                                    }}
-                                >
-                                    Login with Face ID
-                                </Button>
-                            )}
-
                             {faceIdAvailable && <Divider sx={{ opacity: 0.1 }}>OR USE PASSWORD</Divider>}
 
                             <TextField
