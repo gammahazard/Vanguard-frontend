@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
     Box, Typography, Container, Stack, Paper, Chip,
