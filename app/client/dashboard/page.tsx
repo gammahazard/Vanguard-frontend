@@ -30,8 +30,7 @@ import {
     Bedtime,
     Wallet,
     CreditCard,
-    CurrencyBitcoin,
-    ExpandMore
+    CurrencyBitcoin
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
@@ -40,7 +39,6 @@ export default function ClientDashboard() {
     const router = useRouter();
     const [userName, setUserName] = useState("Guest");
     const [navValue, setNavValue] = useState(0);
-    const [showCrypto, setShowCrypto] = useState(false);
 
     useEffect(() => {
         const storedName = localStorage.getItem('vanguard_user');
@@ -177,41 +175,35 @@ export default function ClientDashboard() {
 
                                 <Typography variant="h3" sx={{ fontWeight: 300 }}>$0.00</Typography>
 
-                                <Button
-                                    variant="contained"
-                                    fullWidth
-                                    startIcon={<CreditCard />}
-                                    sx={{ mt: 1 }}
-                                >
-                                    Pay Now
-                                </Button>
-
-                                <Box sx={{ pt: 1 }}>
+                                <Stack spacing={1} sx={{ mt: 1 }}>
                                     <Button
-                                        size="small"
-                                        endIcon={<ExpandMore sx={{ transform: showCrypto ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />}
-                                        onClick={() => setShowCrypto(!showCrypto)}
-                                        sx={{ color: 'text.secondary', textTransform: 'none', fontSize: '0.75rem' }}
+                                        variant="contained"
+                                        fullWidth
+                                        startIcon={<CreditCard />}
+                                        sx={{ bgcolor: '#635BFF' }} // Stripe Blurple
                                     >
-                                        Advanced Options
+                                        Pay with Card
                                     </Button>
+                                    <Button
+                                        variant="outlined"
+                                        fullWidth
+                                        startIcon={<Wallet />}
+                                        sx={{ borderColor: '#0070BA', color: '#0070BA' }} // PayPal Blue
+                                    >
+                                        PayPal
+                                    </Button>
+                                </Stack>
 
-                                    <Collapse in={showCrypto}>
-                                        <Paper sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2 }}>
-                                            <Stack spacing={1}>
-                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <CurrencyBitcoin sx={{ fontSize: 16, color: '#60a5fa' }} />
-                                                    <Typography variant="caption" color="text.secondary">USDC / ETH Accepted</Typography>
-                                                </Stack>
-                                                <Typography variant="caption" sx={{ fontFamily: 'monospace', bgcolor: 'rgba(0,0,0,0.5)', p: 1, borderRadius: 1, display: 'block', wordBreak: 'break-all' }}>
-                                                    0x71C7656EC7ab8...f6d8976F
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.65rem' }}>
-                                                    *Instant settlement via Smart Contract.
-                                                </Typography>
-                                            </Stack>
-                                        </Paper>
-                                    </Collapse>
+                                <Box sx={{ pt: 2, textAlign: 'center' }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                        Prefer to use cryptocurrency?
+                                    </Typography>
+                                    <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                                        <CurrencyBitcoin sx={{ fontSize: 16, color: '#F7931A' }} />
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                            We accept USDC, USDT, BTC, ETH
+                                        </Typography>
+                                    </Stack>
                                 </Box>
                             </Stack>
                         </Paper>
