@@ -67,6 +67,16 @@ graph TD
     ChatStaff <--> ChatClient
 ```
 
+## 🔒 Security Architecture
+
+Vanguard employs a **Decoupled Architecture**, explicitly separating the frontend presentation layer from the backend logic and database.
+
+*   **Frontend (Next.js)**: Hosted on Vercel/Edge. Acts purely as a visual client. It processes no sensitive logic and has no direct access to the database.
+*   **Backend (Rust)**: Hosted on a secure, isolated Linux VPS. Written in high-performance Rust, it handles all authentication, business logic, and database transactions.
+
+### Vulnerability Mitigation
+This separation ensures that common web vulnerabilities (like Next.js Server-Side Request Forgery or RCE exploits) cannot compromise the core system. Even if the frontend were compromised, the attacker would have no access to the backend environment, database credentials, or server files.
+
 ## 🔒 Security Flow
 
 Vanguard employs a defense-in-depth strategy to ensure user data remains private.
