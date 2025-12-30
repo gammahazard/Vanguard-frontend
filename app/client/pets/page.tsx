@@ -7,7 +7,7 @@ import {
     Fab, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Grid,
     CircularProgress, Snackbar, Alert
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes, Edit } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { API_BASE_URL } from "@/lib/config";
 import Link from "next/link";
@@ -22,6 +22,7 @@ export default function PetsView() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [error, setError] = useState("");
     const [succcessMsg, setSuccessMsg] = useState("");
+    const [editingPet, setEditingPet] = useState<any | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -74,8 +75,27 @@ export default function PetsView() {
         if (!email) return;
 
         try {
+            const method = editingPet ? 'PUT' : 'POST';
+            const body: any = {
+                owner_email: email,
+                name: formData.name,
+                breed: formData.breed,
+                age: parseInt(formData.age) || 0,
+                weight: parseFloat(formData.weight) || 0,
+                temperament: formData.temperament,
+                allergies: formData.allergies || null,
+                image_url: formData.image_url || null,
+                notes: formData.notes || null,
+                vet_name: formData.vet_name || null,
+                vet_phone: formData.vet_phone || null
+            };
+
+            if (editingPet) {
+                body.id = editingPet.id;
+            }
+
             const res = await fetch(`${API_BASE_URL}/api/pets`, {
-                method: 'POST',
+                method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     owner_email: email,
@@ -93,8 +113,9 @@ export default function PetsView() {
             });
 
             if (res.ok) {
-                setSuccessMsg("Pet added successfully!");
+                setSuccessMsg(editingPet ? "Pet updated successfully!" : "Pet added successfully!");
                 setShowAddModal(false);
+                setEditingPet(null);
                 setFormData({
                     name: "", breed: "", age: "", weight: "", temperament: "", allergies: "",
                     notes: "", vet_name: "", vet_phone: "", image_url: ""
@@ -141,7 +162,26 @@ export default function PetsView() {
                     ) : (
                         <Stack spacing={2}>
                             {pets.map((pet) => (
-                                <PetCard key={pet.id} pet={pet} />
+                                <PetCard
+                                    key={pet.id}
+                                    pet={pet}
+                                    onEdit={() => {
+                                        setEditingPet(pet);
+                                        setFormData({
+                                            name: pet.name,
+                                            breed: pet.breed,
+                                            age: pet.age.toString(),
+                                            weight: pet.weight.toString(),
+                                            temperament: pet.temperament,
+                                            allergies: pet.allergies || "",
+                                            notes: pet.notes || "",
+                                            vet_name: pet.vet_name || "",
+                                            vet_phone: pet.vet_phone || "",
+                                            image_url: pet.image_url || ""
+                                        });
+                                        setShowAddModal(true);
+                                    }}
+                                />
                             ))}
                         </Stack>
                     )}
@@ -159,8 +199,8 @@ export default function PetsView() {
                 </Fab>
 
                 {/* Add Pet Modal */}
-                <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 3 } }}>
-                    <DialogTitle>Add New VIP</DialogTitle>
+                <Dialog open={showAddModal} onClose={() => { setShowAddModal(false); setEditingPet(null); }} PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 3 } }}>
+                    <DialogTitle>{editingPet ? "Edit VIP Profile" : "Add New VIP"}</DialogTitle>
                     <DialogContent>
                         <DialogContentText color="text.secondary" sx={{ mb: 2 }}>
                             Create a digital profile for your pet.
@@ -255,7 +295,7 @@ export default function PetsView() {
     );
 }
 
-function PetCard({ pet }: any) {
+function PetCard({ pet, onEdit }: any) {
     return (
         <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <Stack direction="row" alignItems="center" gap={2} mb={2}>
@@ -267,8 +307,18 @@ function PetCard({ pet }: any) {
                         {pet.age} Years Old
                     </Typography>
                 </Box>
-                {/* Status indicator - mocking for now since backend doesn't track live status yet */}
-                <Chip label="At Home" size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip label="At Home" size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{ minWidth: 32, p: 0.5, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary', '&:hover': { borderColor: 'rgba(255,255,255,0.3)', bgcolor: 'rgba(255,255,255,0.05)' } }}
+                        onClick={onEdit}
+                    >
+                        <Edit fontSize="small" />
+                    </Button>
+                </Stack>
             </Stack>
 
             <Stack spacing={1}>
