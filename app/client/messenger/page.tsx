@@ -29,6 +29,8 @@ export default function MessengerView() {
     const fetchMessages = async () => {
         if (!userEmail) return;
         try {
+            // backend::get_messages_handler (GET /api/messages)
+            // polling happens every 5s further down
             const res = await fetch(`${API_BASE_URL}/api/messages?email=${encodeURIComponent(userEmail)}`);
             if (res.ok) {
                 const data = await res.json();
@@ -44,7 +46,9 @@ export default function MessengerView() {
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !userEmail || sending) return;
         setSending(true);
+        setSending(true);
         try {
+            // backend::send_message_handler (POST /api/messages)
             const res = await fetch(`${API_BASE_URL}/api/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

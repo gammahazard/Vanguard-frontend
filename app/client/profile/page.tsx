@@ -42,6 +42,7 @@ export default function ProfileView() {
         const email = localStorage.getItem('vanguard_email');
         if (!email) return;
 
+        // hitting backend::get_user_audit_handler (paginated now)
         fetch(`${API_BASE_URL}/api/user/security-logs?email=${encodeURIComponent(email)}&page=${page}&limit=5`)
             .then(res => res.json())
             .then(data => {
@@ -71,8 +72,12 @@ export default function ProfileView() {
         // Fetch actual status from backend to force-sync the slider
         if (email) {
             console.log("🔍 Checking Face ID status for:", email);
+            // backendAuth::auth_check_handler
+            // checks if face id credential exists in db for this user
             fetch(`${API_BASE_URL}/api/auth/check?email=${encodeURIComponent(email)}`)
                 .then(res => {
+                    // backendAuth::auth_check_handler
+                    // checks if face id credential exists in db for this user
                     if (!res.ok) throw new Error("Status check failed");
                     return res.json();
                 })
@@ -89,6 +94,7 @@ export default function ProfileView() {
                 .catch(err => console.error("❌ Error checking Face ID status:", err));
 
             // NEW: Fetch full profile
+            // backend::get_user_profile_handler - gets phone/created_at etc
             fetch(`${API_BASE_URL}/api/user/profile?email=${encodeURIComponent(email)}`)
                 .then(res => res.json())
                 .then(data => setProfileData(data))
@@ -127,6 +133,7 @@ export default function ProfileView() {
             console.log("🚀 Starting Face ID Registration for:", email);
 
             // 1. Get challenge
+            // backendAuth::register_start - generates webauthn challenge
             const resStart = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -161,6 +168,7 @@ export default function ProfileView() {
             console.log("✅ Biometric Response received:", attResp);
 
             // 3. Verify
+            // backendAuth::register_finish - verifies sig and stores cred
             const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/finish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -196,6 +204,7 @@ export default function ProfileView() {
             }
 
             const res = await fetch(`${API_BASE_URL}/api/user?email=${encodeURIComponent(email)}`, {
+                // backend::delete_user_handler - CASACADING DELETE (careful)
                 method: 'DELETE'
             });
 
@@ -245,6 +254,8 @@ export default function ProfileView() {
         if (!currentEmail) return;
 
         try {
+            // backend::update_user_profile_handler
+            // email updates are blocked server side just fyi
             const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -253,6 +264,7 @@ export default function ProfileView() {
                     new_email: editData.email || null,
                     new_name: editData.name || null,
                     new_phone: editData.phone || null
+                    // new_email: ... blocked
                 })
             });
 

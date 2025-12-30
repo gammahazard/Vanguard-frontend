@@ -62,6 +62,7 @@ export default function PetsView() {
         }
 
         try {
+            // backend::get_pets_handler (GET /api/pets)
             const res = await fetch(`${API_BASE_URL}/api/pets?email=${encodeURIComponent(email)}`);
             if (res.ok) {
                 const data = await res.json();
@@ -87,6 +88,7 @@ export default function PetsView() {
             const url = isEditing ? `${API_BASE_URL}/api/pets/${editingPet.id}` : `${API_BASE_URL}/api/pets`;
             const method = isEditing ? 'PUT' : 'POST';
 
+            // backend::create_pet_handler OR backend::update_pet_handler
             const res = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
@@ -149,6 +151,7 @@ export default function PetsView() {
 
         setIsDeleting(true);
         try {
+            // backend::delete_pet_handler (DELETE /api/pets/:id)
             const res = await fetch(`${API_BASE_URL}/api/pets/${petToDelete.id}?email=${encodeURIComponent(email)}`, {
                 method: 'DELETE'
             });

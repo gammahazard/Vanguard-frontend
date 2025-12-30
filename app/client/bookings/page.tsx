@@ -58,6 +58,7 @@ export default function BookingsView() {
         if (!email) return;
 
         try {
+            // backend::get_user_bookings_handler && backend::get_pets_handler
             const [bookingsRes, petsRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/user/bookings?email=${encodeURIComponent(email)}`),
                 fetch(`${API_BASE_URL}/api/pets?email=${encodeURIComponent(email)}`)
@@ -101,6 +102,7 @@ export default function BookingsView() {
         const email = localStorage.getItem('vanguard_email');
         setSubmitting(true);
         try {
+            // backend::create_booking_handler (POST /api/bookings)
             const res = await fetch(`${API_BASE_URL}/api/bookings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -129,7 +131,9 @@ export default function BookingsView() {
     const handleCancelBooking = async () => {
         if (!bookingToCancel) return;
         setCancelling(true);
+        setCancelling(true);
         try {
+            // backend::update_booking_handler (PUT /api/bookings/:id)
             const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingToCancel.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
