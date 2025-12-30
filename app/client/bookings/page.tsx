@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
     Box, Typography, Container, Stack, Paper, Chip,
-    BottomNavigation, BottomNavigationAction, ThemeProvider, CssBaseline, Fab, Divider
+    BottomNavigation, BottomNavigationAction, ThemeProvider, CssBaseline, Fab, Divider, Button
 } from "@mui/material";
 import { Home, Pets, CalendarMonth, Person, Add, LocationOn, AccessTime } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
@@ -37,34 +37,15 @@ export default function BookingsView() {
                         {/* Section: UPCOMING */}
                         <Box>
                             <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2}>Upcoming</Typography>
-                            <Paper sx={{ mt: 1, p: 2, borderRadius: 3, background: 'linear-gradient(145deg, rgba(212,175,55,0.1) 0%, rgba(0,0,0,0) 100%)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                                <Stack spacing={2}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                                        <Box>
-                                            <Typography variant="h6" fontWeight="bold">Holiday Boarding</Typography>
-                                            <Typography variant="body2" color="text.secondary">My Pets</Typography>
-                                        </Box>
-                                        <Chip label="CONFIRMED" color="success" size="small" sx={{ fontWeight: 'bold' }} />
-                                    </Stack>
-
-                                    <Divider sx={{ opacity: 0.1 }} />
-
-                                    <Stack direction="row" spacing={3}>
-                                        <Box>
-                                            <Typography variant="caption" color="text.secondary" display="flex" alignItems="center" gap={0.5}><CalendarMonth fontSize="small" /> CHECK IN</Typography>
-                                            <Typography variant="body2" fontWeight="bold">Dec 24, 2024</Typography>
-                                            <Typography variant="caption" color="text.secondary">09:00 AM</Typography>
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="caption" color="text.secondary" display="flex" alignItems="center" gap={0.5}><AccessTime fontSize="small" /> DURATION</Typography>
-                                            <Typography variant="body2" fontWeight="bold">5 Nights</Typography>
-                                        </Box>
-                                    </Stack>
-
-                                    <Typography variant="caption" color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <LocationOn fontSize="small" /> Executive Suite A
-                                    </Typography>
-                                </Stack>
+                            <Paper sx={{ mt: 1, p: 4, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                <CalendarMonth sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+                                <Typography variant="h6" color="text.secondary">No Active Reservations</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Ready to plan your pup's next vacation?
+                                </Typography>
+                                <Button variant="outlined" startIcon={<Add />} color="primary">
+                                    New Booking
+                                </Button>
                             </Paper>
                         </Box>
 

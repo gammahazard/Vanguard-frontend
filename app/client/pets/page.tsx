@@ -9,10 +9,10 @@ import {
 } from "@mui/material";
 import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
+import { API_BASE_URL } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const API_BASE_URL = "https://vanguard-backend.172.105.24.93.nip.io";
 
 export default function PetsView() {
     const router = useRouter();
