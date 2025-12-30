@@ -296,3 +296,50 @@ function HighlightCard({ icon, time, title, desc }: { icon: any, time: string, t
         </Paper>
     );
 }
+
+function CamCard({ name }: { name: string }) {
+    return (
+        <Paper sx={{
+            minWidth: 280,
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.1)',
+            aspectRatio: '16/9',
+            bgcolor: '#000',
+            flexShrink: 0
+        }}>
+            <Box sx={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                zIndex: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                bgcolor: 'rgba(212, 175, 55, 0.9)',
+                px: 1.2,
+                py: 0.4,
+                borderRadius: 1,
+                backdropFilter: 'blur(4px)'
+            }}>
+                <Typography variant="caption" fontWeight="bold" color="black" sx={{ fontSize: '0.65rem' }}>COMING SOON</Typography>
+            </Box>
+
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
+                <Videocam sx={{ fontSize: 48 }} />
+            </Box>
+
+            <Box sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                p: 2,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)'
+            }}>
+                <Typography variant="caption" sx={{ fontWeight: 500, opacity: 0.8 }}>{name}</Typography>
+            </Box>
+        </Paper>
+    );
+}
