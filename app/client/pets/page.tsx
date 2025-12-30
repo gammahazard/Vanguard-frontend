@@ -1,18 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box, Typography, Container, Stack, Paper, Avatar, Chip,
-    BottomNavigation, BottomNavigationAction, ThemeProvider, CssBaseline
+    BottomNavigation, BottomNavigationAction, ThemeProvider, CssBaseline,
+    Fab, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, Grid,
+    CircularProgress, Snackbar, Alert
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, MoreVert } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, MoreVert, Add, MedicalServices, Scale, Notes } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const API_BASE_URL = "https://vanguard-backend.172.105.24.93.nip.io";
+
 export default function PetsView() {
     const router = useRouter();
     const [navValue, setNavValue] = useState(1); // Index 1 is Pets
+    const [pets, setPets] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [error, setError] = useState("");
+    const [succcessMsg, setSuccessMsg] = useState("");
+
+    // Form State
+    const [formData, setFormData] = useState({
+        name: "",
+        breed: "",
+        age: "",
+        weight: "",
+        temperament: "",
+        allergies: "",
+        notes: "",
+        vet_name: "",
+        vet_phone: ""
+    });
 
     const handleNavChange = (newValue: number) => {
         setNavValue(newValue);
@@ -21,39 +43,185 @@ export default function PetsView() {
         if (newValue === 3) router.push('/client/profile');
     };
 
+    const fetchPets = async () => {
+        setLoading(true);
+        const email = localStorage.getItem('vanguard_email');
+        if (!email) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/pets?email=${encodeURIComponent(email)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setPets(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch pets", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPets();
+    }, []);
+
+    const handleSavePet = async () => {
+        const email = localStorage.getItem('vanguard_email');
+        if (!email) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/pets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    owner_email: email,
+                    name: formData.name,
+                    breed: formData.breed,
+                    age: parseInt(formData.age) || 0,
+                    weight: parseFloat(formData.weight) || 0,
+                    temperament: formData.temperament,
+                    allergies: formData.allergies || null,
+                    image_url: null, // Placeholder or Upload later
+                    notes: formData.notes || null,
+                    vet_name: formData.vet_name || null,
+                    vet_phone: formData.vet_phone || null
+                })
+            });
+
+            if (res.ok) {
+                setSuccessMsg("Pet added successfully!");
+                setShowAddModal(false);
+                setFormData({
+                    name: "", breed: "", age: "", weight: "", temperament: "", allergies: "",
+                    notes: "", vet_name: "", vet_phone: ""
+                });
+                fetchPets();
+            } else {
+                setError("Failed to save pet. Please try again.");
+            }
+        } catch (err) {
+            setError("Network error. Please try again.");
+        }
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
+            <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
 
                 {/* Header */}
-                <Paper elevation={0} sx={{ p: 2, bgcolor: 'rgba(5, 6, 8, 0.9)', position: 'sticky', top: 0, zIndex: 10 }}>
-                    <Typography variant="h6" fontWeight="bold">My Pets</Typography>
+                <Paper elevation={0} sx={{ p: 2, bgcolor: 'rgba(5, 6, 8, 0.9)', position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(10px)' }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="h6" fontWeight="bold">My Pets</Typography>
+                        <Chip label={`${pets.length} VIPs`} size="small" sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontWeight: 'bold' }} />
+                    </Stack>
                 </Paper>
 
                 <Container maxWidth="sm" sx={{ pt: 2 }}>
-                    <Stack spacing={2}>
-                        {/* Pet Card 1 */}
-                        <PetCard
-                            name="Pet 1"
-                            breed="Example Breed"
-                            status="Checked In"
-                            statusColor="#4ade80"
-                            weight="32"
-                            temperament="Friendly / High Energy"
-                            allergies="None"
-                        />
-                        {/* Pet Card 2 */}
-                        <PetCard
-                            name="Pet 2"
-                            breed="Example Breed"
-                            status="At Home"
-                            statusColor="text.secondary"
-                            weight="12"
-                            temperament="Calm / Relaxed"
-                        />
-                    </Stack>
+
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" py={4}><CircularProgress color="primary" /></Box>
+                    ) : pets.length === 0 ? (
+                        <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3 }}>
+                            <Pets sx={{ fontSize: 60, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
+                            <Typography variant="h6" gutterBottom>No Pets Found</Typography>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                Add your first "Digital Dog" to verify them for bookings.
+                            </Typography>
+                            <Button variant="outlined" startIcon={<Add />} onClick={() => setShowAddModal(true)}>
+                                Add Pet
+                            </Button>
+                        </Paper>
+                    ) : (
+                        <Stack spacing={2}>
+                            {pets.map((pet) => (
+                                <PetCard key={pet.id} pet={pet} />
+                            ))}
+                        </Stack>
+                    )}
+
                 </Container>
+
+                {/* FAB */}
+                <Fab
+                    color="primary"
+                    aria-label="add"
+                    sx={{ position: 'fixed', bottom: 90, right: 24, bgcolor: '#D4AF37', '&:hover': { bgcolor: '#b5952f' } }}
+                    onClick={() => setShowAddModal(true)}
+                >
+                    <Add />
+                </Fab>
+
+                {/* Add Pet Modal */}
+                <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 3 } }}>
+                    <DialogTitle>Add New VIP</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText color="text.secondary" sx={{ mb: 2 }}>
+                            Create a digital profile for your pet.
+                        </DialogContentText>
+                        <Stack spacing={2}>
+                            <TextField
+                                label="Name" fullWidth variant="filled"
+                                value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                            <TextField
+                                label="Breed" fullWidth variant="filled"
+                                value={formData.breed} onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                            />
+                            <Stack direction="row" spacing={2}>
+                                <TextField
+                                    label="Age (Years)" fullWidth variant="filled" type="number"
+                                    value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                />
+                                <TextField
+                                    label="Weight (kg)" fullWidth variant="filled" type="number"
+                                    value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                                />
+                            </Stack>
+                            <TextField
+                                label="Temperament (e.g. Friendly, Shy)" fullWidth variant="filled"
+                                value={formData.temperament} onChange={(e) => setFormData({ ...formData, temperament: e.target.value })}
+                            />
+                            <TextField
+                                label="Allergies (Optional)" fullWidth variant="filled"
+                                value={formData.allergies} onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                            />
+
+                            <Typography variant="caption" color="primary" sx={{ pt: 1, fontWeight: 'bold' }}>MEDICAL & VET INFO</Typography>
+
+                            <TextField
+                                label="Medical Notes" fullWidth variant="filled" multiline rows={2}
+                                value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            />
+                            <Stack direction="row" spacing={2}>
+                                <TextField
+                                    label="Vet Name" fullWidth variant="filled"
+                                    value={formData.vet_name} onChange={(e) => setFormData({ ...formData, vet_name: e.target.value })}
+                                />
+                                <TextField
+                                    label="Vet Phone" fullWidth variant="filled"
+                                    value={formData.vet_phone} onChange={(e) => setFormData({ ...formData, vet_phone: e.target.value })}
+                                />
+                            </Stack>
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setShowAddModal(false)} color="inherit">Cancel</Button>
+                        <Button onClick={handleSavePet} variant="contained" sx={{ bgcolor: '#D4AF37', color: 'black' }}>
+                            Save Profile
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError("")}>
+                    <Alert severity="error" variant="filled">{error}</Alert>
+                </Snackbar>
+                <Snackbar open={!!succcessMsg} autoHideDuration={4000} onClose={() => setSuccessMsg("")}>
+                    <Alert severity="success" variant="filled">{succcessMsg}</Alert>
+                </Snackbar>
 
                 {/* Bottom Nav */}
                 <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }} elevation={3}>
@@ -74,28 +242,60 @@ export default function PetsView() {
     );
 }
 
-function PetCard({ name, breed, status, statusColor, img, weight, temperament, allergies }: any) {
+function PetCard({ pet }: any) {
     return (
         <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <Stack direction="row" alignItems="center" gap={2} mb={2}>
-                <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main', fontSize: '1.5rem', fontWeight: 'bold' }}>{name[0]}</Avatar>
+                <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main', fontSize: '1.5rem', fontWeight: 'bold' }}>{pet.name[0]}</Avatar>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" fontWeight="bold">{name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{breed}</Typography>
-                    <Typography variant="caption" sx={{ color: statusColor, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        • {status}
+                    <Typography variant="h6" fontWeight="bold">{pet.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">{pet.breed}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {pet.age} Years Old
                     </Typography>
                 </Box>
-                <MoreVert sx={{ color: 'text.secondary' }} />
+                {/* Status indicator - mocking for now since backend doesn't track live status yet */}
+                <Chip label="At Home" size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
             </Stack>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                <Chip size="small" label={`${weight} kg`} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary' }} />
-                <Chip size="small" label={temperament} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary' }} />
-                {allergies && (
-                    <Chip size="small" label={`⚠️ ${allergies}`} sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 'bold' }} />
+            <Grid container spacing={1}>
+                {/* Visual Stats */}
+                <Grid item xs={6}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                        <Scale fontSize="small" color="disabled" />
+                        <Typography variant="body2" color="text.secondary">{pet.weight} kg</Typography>
+                    </Stack>
+                </Grid>
+                <Grid item xs={6}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                        <Pets fontSize="small" color="disabled" />
+                        <Typography variant="body2" color="text.secondary" noWrap>{pet.temperament}</Typography>
+                    </Stack>
+                </Grid>
+
+                {/* Vet / Medical */}
+                {(pet.vet_name || pet.notes) && (
+                    <Grid item xs={12}>
+                        <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 1, borderRadius: 2 }}>
+                            <MedicalServices fontSize="small" color="primary" sx={{ mt: 0.3 }} />
+                            <Box>
+                                {pet.vet_name && <Typography variant="caption" display="block" color="text.secondary">Vet: {pet.vet_name} {pet.vet_phone && `(${pet.vet_phone})`}</Typography>}
+                                {pet.notes && <Typography variant="caption" display="block" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>"{pet.notes}"</Typography>}
+                            </Box>
+                        </Stack>
+                    </Grid>
                 )}
-            </Stack>
+
+                {/* Allergies Warning */}
+                {pet.allergies && (
+                    <Grid item xs={12}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', p: 1, borderRadius: 2 }}>
+                            <Typography variant="caption" color="error" fontWeight="bold">⚠️ Allergies:</Typography>
+                            <Typography variant="caption" color="error">{pet.allergies}</Typography>
+                        </Stack>
+                    </Grid>
+                )}
+            </Grid>
         </Paper>
     );
 }
