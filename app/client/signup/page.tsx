@@ -139,6 +139,20 @@ export default function ClientSignup() {
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: 300, mx: 'auto' }}>
                                     Create your secure portal account to manage bookings and live feeds.
                                 </Typography>
+
+                                {error && !error.includes("Passwords") && !error.includes("match") && (
+                                    <Box sx={{
+                                        mt: 2,
+                                        p: 1.5,
+                                        bgcolor: 'rgba(211, 47, 47, 0.1)',
+                                        borderRadius: 2,
+                                        border: '1px solid rgba(211, 47, 47, 0.2)'
+                                    }}>
+                                        <Typography variant="caption" color="error" sx={{ textAlign: 'center', display: 'block' }}>
+                                            {error}
+                                        </Typography>
+                                    </Box>
+                                )}
                             </Box>
 
                             {/* Form */}
@@ -178,7 +192,7 @@ export default function ClientSignup() {
                                     placeholder="Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    error={!!error && !error.includes("Passwords")}
+                                    error={!!error && error.includes("Password") && !error.includes("match")}
                                     InputProps={{
                                         startAdornment: <Lock sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
                                         endAdornment: (
@@ -197,8 +211,8 @@ export default function ClientSignup() {
                                     placeholder="Confirm Password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    error={(confirmPassword !== "" && password !== confirmPassword) || (!!error && error.includes("Passwords"))}
-                                    helperText={confirmPassword !== "" && password !== confirmPassword ? "Passwords do not match" : (error.includes("Passwords") ? error : "")}
+                                    error={(confirmPassword !== "" && password !== confirmPassword) || (!!error && (error.includes("Passwords") || error.includes("match")))}
+                                    helperText={confirmPassword !== "" && password !== confirmPassword ? "Passwords do not match" : (error.includes("Passwords") || error.includes("match") ? error : "")}
                                     InputProps={{
                                         startAdornment: <Lock sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
                                         endAdornment: (
