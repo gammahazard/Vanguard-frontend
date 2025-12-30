@@ -229,7 +229,7 @@ export default function SplashGate() {
                                 <Stack direction="row" spacing={2} alignItems="center">
                                     <AddBox sx={{ color: '#fff', fontSize: 20 }} />
                                     <Typography variant="body2" color="#ccc">
-                                        2. Tap <b>Add to Home Screen</b> (Scroll or tap 'More')
+                                        2. Tap <b>Add to Home Screen</b> (Scroll or tap &apos;More&apos;)
                                     </Typography>
                                 </Stack>
                             </Stack>

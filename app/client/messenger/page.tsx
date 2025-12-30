@@ -73,6 +73,7 @@ export default function MessengerView() {
         fetchMessages();
         const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
         return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

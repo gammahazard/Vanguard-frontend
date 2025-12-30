@@ -195,7 +195,7 @@ export default function PetsView() {
                             <Pets sx={{ fontSize: 60, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
                             <Typography variant="h6" gutterBottom>No Pets Found</Typography>
                             <Typography variant="body2" color="text.secondary" paragraph>
-                                Add your first "Digital Dog" to verify them for bookings.
+                                Add your first &quot;Digital Dog&quot; to verify them for bookings.
                             </Typography>
                             <Button variant="outlined" startIcon={<Add />} onClick={() => setShowAddModal(true)}>
                                 Add Pet
@@ -413,7 +413,7 @@ function PetCard({ pet, onEdit, onDelete }: any) {
                             <MedicalServices fontSize="small" color="primary" sx={{ mt: 0.3 }} />
                             <Box>
                                 {pet.vet_name && <Typography variant="caption" display="block" color="text.secondary">Vet: {pet.vet_name} {pet.vet_phone && `(${pet.vet_phone})`}</Typography>}
-                                {pet.notes && <Typography variant="caption" display="block" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>"{pet.notes}"</Typography>}
+                                {pet.notes && <Typography variant="caption" display="block" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>&quot;{pet.notes}&quot;</Typography>}
                             </Box>
                         </Stack>
                     </Box>

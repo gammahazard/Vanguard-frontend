@@ -181,7 +181,7 @@ export default function ClientDashboard() {
                         {/* 4. DAILY HIGHLIGHTS (Horizontal Scroll) */}
                         <Box>
                             <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.1em', pl: 1 }}>
-                                Today's Highlights
+                                Today&apos;s Highlights
                             </Typography>
                             <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1, mx: -2, px: 2, mt: 1, '::-webkit-scrollbar': { display: 'none' } }}>
                                 {/* Dynamic logic could go here, for now keeping mock */}

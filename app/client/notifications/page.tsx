@@ -82,7 +82,7 @@ export default function NotificationsView() {
                         <Box sx={{ textAlign: 'center', py: 10, opacity: 0.5 }}>
                             <Notifications sx={{ fontSize: 80, mb: 2 }} />
                             <Typography variant="h6">No Notifications</Typography>
-                            <Typography variant="body2">When staff send updates or your bookings change, they'll appear here.</Typography>
+                            <Typography variant="body2">When staff send updates or your bookings change, they&apos;ll appear here.</Typography>
                         </Box>
                     ) : (
                         <Stack spacing={2}>
