@@ -159,7 +159,7 @@ useEffect(() => {
                         </Typography>
                     </Stack>
 
-                    <Typography variant="h3" sx={{ fontWeight: 300 }}>$125.00</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 300 }}>$0.00</Typography>
 
                     <Button
                         variant="contained"

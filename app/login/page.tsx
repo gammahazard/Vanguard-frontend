@@ -14,22 +14,89 @@ import {
     ThemeProvider,
     CssBaseline,
     Divider,
-    InputAdornment
+    InputAdornment,
+    Alert,
+    Snackbar
 } from "@mui/material";
 import { Visibility, VisibilityOff, Face, ArrowBack } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 
+import { startAuthentication } from '@simplewebauthn/browser';
+import { API_BASE_URL } from "@/lib/config";
+
 export default function UnifiedLogin() {
     const router = useRouter();
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState({ text: "", open: false });
 
-    const handleLogin = () => {
-        // Mock Auth Logic
-        if (email.toLowerCase().includes('staff') || email.toLowerCase().includes('admin')) {
-            router.push('/staff/login'); // Or direct to staff dashboard if we were fully integrated
-        } else {
-            router.push('/client/dashboard');
+    const handleLogin = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('vanguard_user', data.name);
+                localStorage.setItem('vanguard_role', data.role);
+                localStorage.setItem('vanguard_email', email);
+
+                if (data.role === 'staff' || data.role === 'owner') {
+                    router.push('/staff/dashboard');
+                } else {
+                    router.push('/client/dashboard');
+                }
+            } else {
+                setMessage({ text: "Authentication failed. Check credentials.", open: true });
+            }
+        } catch (err) {
+            setMessage({ text: "Connection error. Backend might be offline.", open: true });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFaceIdLogin = async () => {
+        if (!email) {
+            setMessage({ text: "Enter your email first to start Face ID login.", open: true });
+            return;
+        }
+
+        try {
+            const resStart = await fetch(`${API_BASE_URL}/api/auth/webauthn/login/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            if (!resStart.ok) throw new Error("No Face ID found for this account.");
+            const options = await resStart.json();
+
+            const attResp = await startAuthentication(options.public_key);
+
+            const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/login/finish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ challenge_id: options.challenge_id, response: attResp })
+            });
+
+            if (resFinish.ok) {
+                const data = await resFinish.json();
+                localStorage.setItem('vanguard_user', data.name);
+                localStorage.setItem('vanguard_role', data.role);
+                localStorage.setItem('vanguard_email', email);
+                router.push('/client/dashboard');
+            } else {
+                throw new Error("Verification failed.");
+            }
+        } catch (err: any) {
+            setMessage({ text: err.message || "Face ID login failed", open: true });
         }
     };
 
@@ -107,6 +174,8 @@ export default function UnifiedLogin() {
                                 fullWidth
                                 placeholder="Password"
                                 type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position="end">
@@ -138,6 +207,7 @@ export default function UnifiedLogin() {
                             fullWidth
                             variant="outlined"
                             startIcon={<Face />}
+                            onClick={handleFaceIdLogin}
                             sx={{
                                 borderColor: 'rgba(255,255,255,0.1)',
                                 color: 'text.secondary',
@@ -163,6 +233,16 @@ export default function UnifiedLogin() {
                         </Stack>
                     </Stack>
                 </Container>
+
+                <Snackbar
+                    open={message.open}
+                    autoHideDuration={6000}
+                    onClose={() => setMessage({ ...message, open: false })}
+                >
+                    <Alert severity="error" variant="filled" sx={{ width: '100%' }}>
+                        {message.text}
+                    </Alert>
+                </Snackbar>
             </Box>
         </ThemeProvider>
     );

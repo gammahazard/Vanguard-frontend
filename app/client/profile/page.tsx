@@ -4,53 +4,127 @@ import { useState, useEffect } from "react";
 import {
     Box, Typography, Container, Stack, Paper, Avatar,
     BottomNavigation, BottomNavigationAction, ThemeProvider, CssBaseline,
-    List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListItemSecondaryAction, Switch, Divider, Button
+    List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListItemSecondaryAction, Switch, Divider, Button, Alert, Snackbar
 } from "@mui/material";
 import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
+import { startRegistration } from '@simplewebauthn/browser';
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ProfileView() {
     const router = useRouter();
     const [userName, setUserName] = useState("Guest");
+    const [navValue, setNavValue] = useState(3);
+    const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
+    const [message, setMessage] = useState({ text: "", severity: "info", open: false });
 
     useEffect(() => {
         const storedName = localStorage.getItem('vanguard_user');
+        const faceIdStatus = localStorage.getItem('vanguard_faceid_enabled');
         if (storedName) setUserName(storedName);
+        if (faceIdStatus === 'true') setIsFaceIdEnabled(true);
     }, []);
 
-    // ... (rest of render)
+    const handleNavChange = (newValue: number) => {
+        setNavValue(newValue);
+        if (newValue === 0) router.push('/client/dashboard');
+        if (newValue === 1) router.push('/client/pets');
+        if (newValue === 2) router.push('/client/bookings');
+    };
 
-    {/* Header Profile */ }
-    <Stack alignItems="center" spacing={1}>
-        <Avatar sx={{ width: 100, height: 100, bgcolor: 'primary.main', fontSize: '2.5rem', fontWeight: 'bold', mb: 1 }}>
-            {userName.charAt(0).toUpperCase()}
-        </Avatar>
-        <Typography variant="h5" fontWeight="bold">{userName}</Typography>
-        <Typography variant="body2" color="text.secondary">Member since 2023</Typography>
-        <Chip label="Gold Member" size="small" sx={{ bgcolor: 'rgba(212,175,55,0.2)', color: 'primary.main', fontWeight: 'bold' }} />
-    </Stack>
+    const handleFaceIdToggle = async () => {
+        if (isFaceIdEnabled) {
+            localStorage.setItem('vanguard_faceid_enabled', 'false');
+            setIsFaceIdEnabled(false);
+            return;
+        }
 
-    {/* Settings Groups */ }
+        try {
+            const email = localStorage.getItem('vanguard_email');
+            if (!email) {
+                setMessage({ text: "Please log in again to register Face ID.", severity: "error", open: true });
+                return;
+            }
+
+            // 1. Get challenge
+            const resStart = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            if (!resStart.ok) throw new Error("Failed to start biometric registration");
+            const options = await resStart.json();
+
+            // 2. Browser prompt
+            const attResp = await startRegistration(options.public_key);
+
+            // 3. Verify
+            const resFinish = await fetch(`${API_BASE_URL}/api/auth/webauthn/register/finish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ challenge_id: options.challenge_id, response: attResp })
+            });
+
+            if (resFinish.ok) {
+                setIsFaceIdEnabled(true);
+                localStorage.setItem('vanguard_faceid_enabled', 'true');
+                setMessage({ text: "Face ID Registered Successfully!", severity: "success", open: true });
+            } else {
+                throw new Error("Verification failed on server");
+            }
+
+        } catch (err: any) {
+            console.error(err);
+            setMessage({ text: err.message || "Registration failed", severity: "error", open: true });
+        }
+    };
+
+    return (
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
+                <Paper elevation={0} sx={{ p: 2, bgcolor: 'rgba(5, 6, 8, 0.9)', position: 'sticky', top: 0, zIndex: 10 }}>
+                    <Typography variant="h6" fontWeight="bold">Account Profile</Typography>
+                </Paper>
+
+                <Container maxWidth="sm" sx={{ pt: 4 }}>
+                    <Stack spacing={4}>
+                        <Stack alignItems="center" spacing={1}>
+                            <Avatar sx={{ width: 100, height: 100, bgcolor: 'primary.main', fontSize: '2.5rem', fontWeight: 'bold', mb: 1 }}>
+                                {userName.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography variant="h5" fontWeight="bold">{userName}</Typography>
+                            <Typography variant="body2" color="text.secondary">Elite Member</Typography>
+                        </Stack>
+
                         <Stack spacing={2}>
-                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Preferences</Typography>
+                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Security & Access</Typography>
                             <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', overflow: 'hidden' }}>
                                 <List disablePadding>
-
-                                    <SettingsItem icon={<Face />} title="Face ID Login" hasSwitch={true} />
+                                    <ListItem disablePadding>
+                                        <ListItemButton onClick={handleFaceIdToggle}>
+                                            <ListItemIcon sx={{ color: 'text.secondary', minWidth: 40 }}><Face /></ListItemIcon>
+                                            <ListItemText
+                                                primary={<Typography variant="body2" fontWeight="500">Face ID Login</Typography>}
+                                                secondary={<Typography variant="caption" color="text.secondary">Use biometrics for quick access</Typography>}
+                                            />
+                                            <ListItemSecondaryAction>
+                                                <Switch
+                                                    edge="end"
+                                                    color="primary"
+                                                    checked={isFaceIdEnabled}
+                                                    onChange={handleFaceIdToggle}
+                                                />
+                                            </ListItemSecondaryAction>
+                                        </ListItemButton>
+                                    </ListItem>
                                     <Divider sx={{ opacity: 0.05 }} />
                                     <SettingsItem icon={<Notifications />} title="Push Notifications" hasSwitch={true} defaultChecked />
                                     <Divider sx={{ opacity: 0.05 }} />
-                                    <SettingsItem icon={<Security />} title="Two-Factor Auth" />
-
-                                </List>
-                            </Paper>
-
-                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1, mt: 2 }}>Payment</Typography>
-                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', overflow: 'hidden' }}>
-                                <List disablePadding>
-                                    <SettingsItem icon={<CreditCard />} title="Payment Methods" subtitle="Visa •••• 4242" />
+                                    <SettingsItem icon={<Security />} title="Security Audit" subtitle="View recent login activity" />
                                 </List>
                             </Paper>
                         </Stack>
@@ -60,33 +134,41 @@ export default function ProfileView() {
                                 variant="outlined"
                                 color="error"
                                 startIcon={<Logout />}
+                                onClick={() => localStorage.clear()}
                                 fullWidth
                                 sx={{ py: 1.5, borderRadius: 3, borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
                             >
                                 Sign Out
                             </Button>
                         </Link>
+                    </Stack>
+                </Container>
 
-                    </Stack >
-                </Container >
+                <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }} elevation={3}>
+                    <BottomNavigation
+                        showLabels
+                        value={navValue}
+                        onChange={(event, newValue) => handleNavChange(newValue)}
+                        sx={{ bgcolor: '#0B0C10', height: 70, '& .Mui-selected': { color: '#D4AF37 !important' } }}
+                    >
+                        <BottomNavigationAction label="Home" icon={<Home />} />
+                        <BottomNavigationAction label="Pets" icon={<Pets />} />
+                        <BottomNavigationAction label="Bookings" icon={<CalendarMonth />} />
+                        <BottomNavigationAction label="Profile" icon={<Person />} />
+                    </BottomNavigation>
+                </Paper>
 
-        {/* Bottom Nav */ }
-        < Paper sx = {{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }
-} elevation = { 3} >
-    <BottomNavigation
-        showLabels
-        value={navValue}
-        onChange={(event, newValue) => handleNavChange(newValue)}
-        sx={{ bgcolor: '#0B0C10', height: 70, '& .Mui-selected': { color: '#D4AF37 !important' } }}
-    >
-        <BottomNavigationAction label="Home" icon={<Home />} />
-        <BottomNavigationAction label="Pets" icon={<Pets />} />
-        <BottomNavigationAction label="Bookings" icon={<CalendarMonth />} />
-        <BottomNavigationAction label="Profile" icon={<Person />} />
-    </BottomNavigation>
-                </Paper >
-            </Box >
-        </ThemeProvider >
+                <Snackbar
+                    open={message.open}
+                    autoHideDuration={6000}
+                    onClose={() => setMessage({ ...message, open: false })}
+                >
+                    <Alert severity={message.severity as any} variant="filled" sx={{ width: '100%' }}>
+                        {message.text}
+                    </Alert>
+                </Snackbar>
+            </Box>
+        </ThemeProvider>
     );
 }
 
@@ -109,15 +191,4 @@ function SettingsItem({ icon, title, subtitle, hasSwitch, defaultChecked }: any)
             </ListItemButton>
         </ListItem>
     );
-}
-
-// Simple Chip component shim for the header
-function Chip({ label, size, sx }: any) {
-    return (
-        <Box sx={{
-            px: 1, py: 0.25, borderRadius: 1, fontSize: '0.7rem', display: 'inline-block', ...sx
-        }}>
-            {label}
-        </Box>
-    )
 }
