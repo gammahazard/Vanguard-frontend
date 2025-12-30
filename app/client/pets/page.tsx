@@ -54,7 +54,7 @@ export default function PetsView() {
         }
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/pets?email=${encodeURIComponent(email)}`);
+            const res = await fetch(`${API_BASE_URL}/api/user/dogs?email=${encodeURIComponent(email)}`);
             if (res.ok) {
                 const data = await res.json();
                 setPets(data);
@@ -97,19 +97,7 @@ export default function PetsView() {
             const res = await fetch(`${API_BASE_URL}/api/pets`, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    owner_email: email,
-                    name: formData.name,
-                    breed: formData.breed,
-                    age: parseInt(formData.age) || 0,
-                    weight: parseFloat(formData.weight) || 0,
-                    temperament: formData.temperament,
-                    allergies: formData.allergies || null,
-                    image_url: formData.image_url || null,
-                    notes: formData.notes || null,
-                    vet_name: formData.vet_name || null,
-                    vet_phone: formData.vet_phone || null
-                })
+                body: JSON.stringify(body)
             });
 
             if (res.ok) {
