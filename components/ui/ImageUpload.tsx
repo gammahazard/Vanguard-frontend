@@ -38,9 +38,13 @@ export function ImageUpload({ initialUrl, onUploadSuccess, label = "VIP Portrait
             return;
         }
 
-        // 2. Client-side Type Validation
-        if (!file.type.startsWith("image/")) {
-            setError("Please upload an image file");
+        // 2. Client-side Type Validation (lenient: check MIME type OR file extension)
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
+        const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        const hasValidMime = file.type.startsWith("image/");
+
+        if (!hasValidMime && !hasValidExtension) {
+            setError("Please upload an image file (JPG, PNG, WebP, HEIC)");
             return;
         }
 
