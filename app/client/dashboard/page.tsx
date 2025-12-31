@@ -91,11 +91,11 @@ export default function ClientDashboard() {
             if (res.ok) {
                 const bookings = await res.json();
 
-                // Calculate Balance
+                // Calculate Balance (Simulated "Rich" Account for Demo + Actual Bookings)
                 const total = bookings
                     .filter((b: Booking) => b.status?.toLowerCase() === "confirmed")
                     .reduce((sum: number, b: Booking) => sum + b.total_price, 0);
-                setBalance(total);
+                setBalance(total + 25000); // 25k simulation
 
                 // Find next/current stay
                 const upcoming = bookings

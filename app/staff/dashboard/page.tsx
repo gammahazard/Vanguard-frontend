@@ -66,14 +66,7 @@ import GuestList from './components/GuestList';
 import ClientDirectory from './components/ClientDirectory';
 import { GuestPet, UserWithPets, GroupedBookingRequest, EnrichedBooking, Message, User, Pet, Booking } from '@/types';
 
-const MOCK_FINANCIALS = {
-    totalRevenue: "$124,500",
-    growth: "+12%",
-    occupancyRate: "92%",
-    adr: "$840",
-    chartData: [40, 65, 45, 80, 55, 90, 70],
-    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-};
+
 
 export default function StaffDashboard() {
     const [guests, setGuests] = useState<GuestPet[]>([]);
@@ -564,66 +557,9 @@ export default function StaffDashboard() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <Stack spacing={3}>
 
-                            {/* Left Column: Revenue & Stats */}
+                            {/* Left Column: Real Stats */}
                             <Stack spacing={3}>
-                                {/* Revenue Graphic (CSS Mock) */}
-                                <Paper sx={{ p: 4, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(212, 175, 55, 0.2)', position: 'relative', overflow: 'hidden' }}>
-                                    <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: 'linear-gradient(90deg, #D4AF37, #F5D061)' }} />
-                                    <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={4}>
-                                        <Box>
-                                            <Typography variant="overline" color="text.secondary">Total Revenue (Dec)</Typography>
-                                            <Typography variant="h3" fontWeight="bold" sx={{ color: '#D4AF37' }}>{MOCK_FINANCIALS.totalRevenue}</Typography>
-                                            <Stack direction="row" spacing={1} alignItems="center" mt={1}>
-                                                <TrendingUp sx={{ color: '#22c55e', fontSize: 18 }} />
-                                                <Typography variant="body2" sx={{ color: '#22c55e' }}>{MOCK_FINANCIALS.growth} vs last month</Typography>
-                                            </Stack>
-                                        </Box>
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Button variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}>Download Report</Button>
-                                        </Box>
-                                    </Stack>
-
-                                    {/* Bar Chart Visualization */}
-                                    <Stack direction="row" alignItems="flex-end" justifyContent="space-between" sx={{ height: 200, px: 2 }}>
-                                        {MOCK_FINANCIALS.chartData.map((h, i) => (
-                                            <Box key={i} sx={{ width: '8%', height: `${h}%`, bgcolor: i === 5 ? '#D4AF37' : 'rgba(255,255,255,0.05)', borderRadius: '4px 4px 0 0', transition: 'height 1s ease', position: 'relative', '&:hover': { bgcolor: i === 5 ? '#F5D061' : 'rgba(255,255,255,0.1)' } }}>
-                                                {i === 5 && <Box sx={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', bgcolor: '#D4AF37', color: 'black', fontSize: 10, px: 1, py: 0.5, borderRadius: 1, fontWeight: 'bold' }}>Record</Box>}
-                                            </Box>
-                                        ))}
-                                    </Stack>
-                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, px: 2 }}>
-                                        {MOCK_FINANCIALS.days.map(d => (
-                                            <Typography key={d} variant="caption" color="text.secondary">{d}</Typography>
-                                        ))}
-                                    </Stack>
-                                </Paper>
-
-                                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-                                    <Paper sx={{ flex: 1, p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                            <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><People /></Avatar>
-                                            <Box>
-                                                <Typography variant="h5" fontWeight="bold">{MOCK_FINANCIALS.occupancyRate}</Typography>
-                                                <Typography variant="caption" color="text.secondary">Occupancy Rate</Typography>
-                                            </Box>
-                                        </Stack>
-                                        <Box sx={{ width: '100%', height: 4, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
-                                            <Box sx={{ width: '92%', height: '100%', bgcolor: '#3b82f6', borderRadius: 2 }} />
-                                        </Box>
-                                    </Paper>
-                                    <Paper sx={{ flex: 1, p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                            <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><AttachMoney /></Avatar>
-                                            <Box>
-                                                <Typography variant="h5" fontWeight="bold">{MOCK_FINANCIALS.adr}</Typography>
-                                                <Typography variant="caption" color="text.secondary">Avg. Daily Rate</Typography>
-                                            </Box>
-                                        </Stack>
-                                        <Box sx={{ width: '100%', height: 4, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
-                                            <Box sx={{ width: '65%', height: '100%', bgcolor: '#10b981', borderRadius: 2 }} />
-                                        </Box>
-                                    </Paper>
-                                </Stack>
+                                <OperationsStats />
                             </Stack>
 
                             {/* Right Column: Staff Management */}
