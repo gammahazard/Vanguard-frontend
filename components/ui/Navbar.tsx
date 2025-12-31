@@ -38,9 +38,9 @@ export function Navbar() {
                     {/* Brand */}
                     <Link href="/" className="flex items-center gap-4 z-50 relative">
                         <div className="w-10 h-10 rounded-xl bg-premium-gold flex items-center justify-center text-black shadow-lg shadow-premium-gold/20">
-                            <span className="font-bold text-xl">V</span>
+                            <span className="font-bold text-xl">L</span>
                         </div>
-                        <span className="text-xl font-bold tracking-wide uppercase text-white hidden md:block">Vanguard</span>
+                        <span className="text-xl font-bold tracking-wide uppercase text-white hidden md:block">LakeShore</span>
                     </Link>
 
                     {/* Desktop Navigation */}

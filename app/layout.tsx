@@ -6,13 +6,13 @@ import { NotificationProvider } from "@/components/NotificationProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "Vanguard Kennel Systems",
+    title: "LakeShore Kennels",
     description: "Premium Pet Management Experience",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
         statusBarStyle: "black-translucent",
-        title: "Vanguard",
+        title: "LakeShore",
     },
     icons: {
         apple: "/icon-192x192.png",
