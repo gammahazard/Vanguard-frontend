@@ -763,24 +763,90 @@ export default function StaffDashboard() {
                                 <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
                                     <Typography color="#64748b">No pending requests at this time.</Typography>
                                 </Paper>
-                            ) : pendingBookings.map((booking) => (
-                                <Paper key={booking.id} sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
-                                        <Stack direction="row" spacing={2} alignItems="center">
-                                            <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><AssignmentIcon /></Avatar>
-                                            <Box>
-                                                <Typography fontWeight="bold" color="white">{booking.dog_name || "Unknown Pet"}</Typography>
-                                                <Typography variant="caption" color="#94a3b8">Owner: {booking.owner_name || booking.user_email}</Typography>
-                                                <Typography variant="body2" sx={{ mt: 0.5, color: '#e2e8f0' }}>Service: {booking.service_type} | Date: {new Date(booking.start_date).toLocaleDateString()}</Typography>
-                                            </Box>
+                            ) : (
+                                // Group bookings by Owner & Date
+                                Object.values(
+                                    pendingBookings.reduce((acc: any, booking: any) => {
+                                        const groupKey = `${booking.user_email}_${booking.start_date}_${booking.end_date}`;
+                                        if (!acc[groupKey]) {
+                                            acc[groupKey] = {
+                                                id: groupKey,
+                                                owner_name: booking.owner_name || booking.user_email,
+                                                owner_email: booking.user_email,
+                                                start_date: booking.start_date,
+                                                end_date: booking.end_date,
+                                                bookings: []
+                                            };
+                                        }
+                                        acc[groupKey].bookings.push(booking);
+                                        return acc;
+                                    }, {})
+                                ).map((group: any) => (
+                                    <Paper key={group.id} sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'flex-start' }} spacing={2}>
+                                            <Stack direction="row" spacing={2} alignItems="flex-start">
+                                                <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                                                    {group.bookings.length > 1 ? <AssignmentIcon /> : <AssignmentIcon />}
+                                                </Avatar>
+                                                <Box>
+                                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                                        <Typography fontWeight="bold" color="white" variant="h6">
+                                                            order for {group.bookings.length} Guest{group.bookings.length > 1 ? 's' : ''}
+                                                        </Typography>
+                                                        {group.bookings.length > 1 && (
+                                                            <Chip label="Group Order" size="small" sx={{ height: 20, bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontSize: '0.65rem' }} />
+                                                        )}
+                                                    </Stack>
+
+                                                    <Typography variant="caption" color="#94a3b8" display="block">
+                                                        Client: {group.owner_name}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mt: 0.5, color: '#e2e8f0' }}>
+                                                        Dates: {new Date(group.start_date).toLocaleDateString()} - {new Date(group.end_date).toLocaleDateString()}
+                                                    </Typography>
+
+                                                    {/* List of Dogs */}
+                                                    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                                        {group.bookings.map((b: any) => (
+                                                            <Chip
+                                                                key={b.id}
+                                                                label={`${b.dog_name} (${b.service_type})`}
+                                                                size="small"
+                                                                sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                            />
+                                                        ))}
+                                                    </Stack>
+                                                </Box>
+                                            </Stack>
+
+                                            <Stack direction="row" spacing={1} sx={{ mt: { xs: 2, md: 0 } }}>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="error"
+                                                    size="small"
+                                                    onClick={() => {
+                                                        if (confirm(`Decline all ${group.bookings.length} requests?`)) {
+                                                            group.bookings.map((b: any) => handleBookingAction(b.id, 'cancelled'));
+                                                        }
+                                                    }}
+                                                >
+                                                    Decline All
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    color="success"
+                                                    size="small"
+                                                    onClick={() => {
+                                                        group.bookings.map((b: any) => handleBookingAction(b.id, 'confirmed'));
+                                                    }}
+                                                >
+                                                    Accept All ({group.bookings.length})
+                                                </Button>
+                                            </Stack>
                                         </Stack>
-                                        <Stack direction="row" spacing={1}>
-                                            <Button variant="outlined" color="error" size="small" onClick={() => handleBookingAction(booking.id, 'cancelled')}>Decline</Button>
-                                            <Button variant="contained" color="success" size="small" onClick={() => handleBookingAction(booking.id, 'confirmed')}>Accept</Button>
-                                        </Stack>
-                                    </Stack>
-                                </Paper>
-                            ))}
+                                    </Paper>
+                                ))
+                            )}
                         </Stack>
 
                         <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
