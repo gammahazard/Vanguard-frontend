@@ -244,6 +244,11 @@ export default function PetsView() {
                                 <MenuItem value="Anxious">Anxious</MenuItem>
                             </TextField>
                             <TextField label="Allergies" fullWidth value={formData.allergies} onChange={e => setFormData({ ...formData, allergies: e.target.value })} variant="filled" placeholder="N/A" />
+                            <TextField label="Medical Notes" fullWidth multiline rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} variant="filled" placeholder="Medications, behavioral notes..." />
+                            <Divider sx={{ my: 1, opacity: 0.1 }} />
+                            <Typography variant="caption" color="primary" fontWeight="bold">EMERGENCY VETERINARY INFO</Typography>
+                            <TextField label="Vet Name" fullWidth value={formData.vet_name} onChange={e => setFormData({ ...formData, vet_name: e.target.value })} variant="filled" />
+                            <TextField label="Vet Phone" fullWidth value={formData.vet_phone} onChange={e => setFormData({ ...formData, vet_phone: e.target.value })} variant="filled" />
                         </Stack>
                     </DialogContent>
                     <DialogActions sx={{ p: 3 }}>
@@ -410,6 +415,24 @@ function PetCard({ pet, onEdit, onDelete }: any) {
                             <IconButton size="small" onClick={onDelete} sx={{ color: 'text.secondary', opacity: 0.5, '&:hover': { color: 'error.main', opacity: 1 } }}><DeleteForever fontSize="small" /></IconButton>
                         </Stack>
                     </Stack>
+
+                    {/* VET & EMERGENCY SECTION */}
+                    {(pet.vet_name || pet.vet_phone) && (
+                        <Box sx={{
+                            mt: 2,
+                            p: 1.5,
+                            borderRadius: 2,
+                            bgcolor: 'rgba(212, 175, 55, 0.05)',
+                            border: '1px dashed rgba(212, 175, 55, 0.2)'
+                        }}>
+                            <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                <MedicalServices sx={{ fontSize: 14, color: 'primary.main' }} />
+                                <Typography variant="caption" color="primary" fontWeight="bold" sx={{ letterSpacing: 1 }}>EMERGENCY VET</Typography>
+                            </Stack>
+                            <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '0.8rem' }}>{pet.vet_name || "NOT LISTED"}</Typography>
+                            <Typography variant="caption" color="text.secondary">{pet.vet_phone || "No phone provided"}</Typography>
+                        </Box>
+                    )}
 
                     <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(255,255,255,0.05)' }}>
                         <Typography
