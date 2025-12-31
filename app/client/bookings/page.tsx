@@ -370,14 +370,14 @@ export default function BookingsView() {
                         <Box sx={{ flex: 1 }} />
                         <Button variant="contained"
                             disabled={
+                                submitting ||
                                 formData.dog_ids.length === 0 ||
-                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date))) ||
-                                (activeStep === 2 && submitting)
+                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date)))
                             }
                             onClick={activeStep < 2 ? handleNext : handleCreateBooking}
-                            sx={{ bgcolor: '#D4AF37', color: 'black' }}
+                            sx={{ bgcolor: '#D4AF37', color: 'black', minWidth: 100 }}
                         >
-                            {activeStep < 2 ? "Next" : "Confirm"}
+                            {submitting ? <CircularProgress size={20} sx={{ color: 'black' }} /> : (activeStep < 2 ? "Next" : "Confirm")}
                         </Button>
                     </DialogActions>
                 </Dialog>
