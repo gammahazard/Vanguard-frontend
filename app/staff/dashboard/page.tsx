@@ -237,6 +237,8 @@ export default function StaffDashboard() {
                 setMessage({ text: `Booking ${action} successfully!`, severity: "success", open: true });
                 fetchPendingBookings();
                 fetchGuests();
+            } else {
+                setMessage({ text: `Update failed: ${res.status} ${res.statusText}`, severity: "error", open: true });
             }
         } catch (e) {
             setMessage({ text: "Failed to update booking", severity: "error", open: true });
