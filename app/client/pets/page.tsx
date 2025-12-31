@@ -19,6 +19,7 @@ import { API_BASE_URL } from "@/lib/config";
 import { sanitizeInput, sanitizePhone } from "@/lib/security";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function PetsView() {
     const router = useRouter();
@@ -44,7 +45,8 @@ export default function PetsView() {
         allergies: "",
         notes: "",
         vet_name: "",
-        vet_phone: ""
+        vet_phone: "",
+        image_url: ""
     });
     const [customTemp, setCustomTemp] = useState("");
 
@@ -91,15 +93,14 @@ export default function PetsView() {
                     ...formData,
                     temperament: formData.temperament === 'Other' ? customTemp : formData.temperament,
                     age: parseInt(formData.age) || 0,
-                    weight: parseFloat(formData.weight) || 0.0,
-                    image_url: ""
+                    weight: parseFloat(formData.weight) || 0.0
                 })
             });
 
             if (res.ok) {
                 setSuccess(`${formData.name} is now a Vanguard VIP! 🍾`);
                 setOpenAdd(false);
-                setFormData({ name: "", breed: "", age: "", weight: "", temperament: "Friendly", allergies: "", notes: "", vet_name: "", vet_phone: "" });
+                setFormData({ name: "", breed: "", age: "", weight: "", temperament: "Friendly", allergies: "", notes: "", vet_name: "", vet_phone: "", image_url: "" });
                 fetchPets();
             } else {
                 const errorData = await res.json();
@@ -126,8 +127,7 @@ export default function PetsView() {
                     ...formData,
                     temperament: formData.temperament === 'Other' ? customTemp : formData.temperament,
                     age: parseInt(formData.age) || 0,
-                    weight: parseFloat(formData.weight) || 0.0,
-                    image_url: editingPet.image_url
+                    weight: parseFloat(formData.weight) || 0.0
                 })
             });
 
@@ -183,7 +183,8 @@ export default function PetsView() {
             allergies: pet.allergies || "",
             notes: pet.notes || "",
             vet_name: pet.vet_name || "",
-            vet_phone: pet.vet_phone || ""
+            vet_phone: pet.vet_phone || "",
+            image_url: pet.image_url || ""
         });
         setCustomTemp(pet.temperament && !['Friendly', 'Relaxed', 'Energetic', 'Protective', 'Anxious'].includes(pet.temperament) ? pet.temperament : "");
         if (pet.temperament && !['Friendly', 'Relaxed', 'Energetic', 'Protective', 'Anxious'].includes(pet.temperament)) {
@@ -199,7 +200,12 @@ export default function PetsView() {
                 {/* Header */}
                 <Paper elevation={0} sx={{ p: 2, bgcolor: 'rgba(5, 6, 8, 0.9)', position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(10px)' }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6" fontWeight="bold">My Pets</Typography>
+                        <Box>
+                            <Typography variant="h6" fontWeight="bold">My Pets</Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(212, 175, 55, 0.6)', fontStyle: 'italic', fontSize: 10 }}>
+                                "Exquisite care for your Very Important Pet (VIP)"
+                            </Typography>
+                        </Box>
                         <Chip label={`${pets.length} VIPs`} size="small" sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontWeight: 'bold' }} />
                     </Stack>
                 </Paper>
@@ -260,7 +266,11 @@ export default function PetsView() {
                         <Typography variant="h5" fontWeight="bold">{openAdd ? "Register VIP" : "Edit Profile"}</Typography>
                     </DialogTitle>
                     <DialogContent sx={{ px: 3 }}>
-                        <Stack spacing={2} sx={{ mt: 1 }}>
+                        <Stack spacing={2.5} sx={{ mt: 1 }}>
+                            <ImageUpload
+                                initialUrl={formData.image_url}
+                                onUploadSuccess={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+                            />
                             <TextField label="VIP Name" fullWidth value={formData.name} onChange={e => setFormData({ ...formData, name: sanitizeInput(e.target.value, 32) })} variant="filled" />
                             <TextField label="Breed" fullWidth value={formData.breed} onChange={e => setFormData({ ...formData, breed: sanitizeInput(e.target.value, 40) })} variant="filled" />
                             <Stack direction="row" spacing={2}>
@@ -399,7 +409,7 @@ function PetCard({ pet, onEdit, onDelete }: any) {
                     {/* HEADER */}
                     <Stack direction="row" spacing={2} mb={3}>
                         <Avatar
-                            src={pet.image_url}
+                            src={pet.image_url ? (pet.image_url.startsWith('http') ? pet.image_url : `${API_BASE_URL}${pet.image_url}`) : ""}
                             sx={{
                                 width: 90,
                                 height: 90,
@@ -453,7 +463,7 @@ function PetCard({ pet, onEdit, onDelete }: any) {
                             {pet.notes && (
                                 <Chip
                                     icon={<Notes sx={{ fontSize: '0.8rem !important' }} />}
-                                    label="SECURE DATA"
+                                    label="MEDICAL DATA PROVIDED"
                                     size="small"
                                     variant="outlined"
                                     sx={{ borderRadius: 1, fontSize: '0.6rem', color: '#60a5fa', borderColor: 'rgba(96, 165, 250, 0.3)', fontWeight: 'bold' }}

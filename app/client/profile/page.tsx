@@ -329,6 +329,9 @@ export default function ProfileView() {
                             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ position: 'relative', zIndex: 1 }}>
                                 <Box>
                                     <Typography variant="overline" sx={{ color: '#D4AF37', fontWeight: 900, letterSpacing: 2 }}>VANGUARD VIP KEY</Typography>
+                                    <Typography variant="caption" display="block" sx={{ color: 'rgba(212, 175, 55, 0.6)', mt: -0.5, mb: 1, fontStyle: 'italic', fontSize: 10 }}>
+                                        "Exquisite care for your Very Important Pet (VIP)"
+                                    </Typography>
                                     <Typography variant="h5" fontWeight="bold" sx={{ mt: 1 }}>{userName.toUpperCase()}</Typography>
                                     <Typography variant="body2" sx={{ opacity: 0.6, fontFamily: 'monospace' }}>
                                         ID: {typeof window !== 'undefined' ? localStorage.getItem('vanguard_email')?.substring(0, 10).toUpperCase() : '---'}
