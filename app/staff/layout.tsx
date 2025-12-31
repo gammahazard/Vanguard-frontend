@@ -67,7 +67,7 @@ const staffTheme = createTheme({
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const [userRole, setUserRole] = useState<string | null>(null);
 
