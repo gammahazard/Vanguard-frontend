@@ -119,7 +119,7 @@ export default function ClientLogin() {
             // CRITICAL CHECK: Are there any allowed credentials?
             if (!options.publicKey.allowCredentials || options.publicKey.allowCredentials.length === 0) {
                 console.error("❌ SERVER ERROR: Server sent NO allowed credentials! It does not know your Face ID.");
-                throw new Error("Server lost your Face ID key. Please re-register.");
+                throw new Error("Credential expired: Please login with your password and re enable face-id login");
             }
             console.log("📦 WebAuthn Challenge received:", options);
 
