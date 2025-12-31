@@ -139,11 +139,14 @@ export default function AuditLogPage() {
                             size="small"
                         />
 
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+                            <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>FILTER:</Typography>
+
+                            {/* Role Filters */}
                             {(['all', 'staff', 'client'] as const).map((r) => (
                                 <Chip
                                     key={r}
-                                    label={r.toUpperCase()}
+                                    label={r === 'all' ? 'ALL ROLES' : r.toUpperCase()}
                                     onClick={() => setFilterRole(r)}
                                     size="small"
                                     sx={{
@@ -155,16 +158,19 @@ export default function AuditLogPage() {
                                     }}
                                 />
                             ))}
-                            <Box sx={{ width: 8 }} />
+
+                            <Box sx={{ width: 1, height: 20, bgcolor: 'rgba(255,255,255,0.1)', mx: 1 }} />
+
+                            {/* Type Filters */}
                             {(['all', 'security', 'financial', 'system'] as const).map((t) => (
                                 <Chip
                                     key={t}
-                                    label={t.toUpperCase()}
+                                    label={t === 'all' ? 'ALL ACTIONS' : t.toUpperCase()}
                                     onClick={() => setFilterType(t)}
                                     size="small"
                                     sx={{
-                                        bgcolor: filterType === t ? getActionColor(t) : 'transparent',
-                                        color: filterType === t ? 'white' : '#94a3b8',
+                                        bgcolor: filterType === t ? getActionColor(t) : 'transparent', // Use color for active state
+                                        color: filterType === t ? (t === 'security' || t === 'financial' ? 'white' : 'black') : '#94a3b8',
                                         fontWeight: 'bold',
                                         border: filterType === t ? 'none' : '1px solid rgba(255,255,255,0.1)',
                                         cursor: 'pointer'
