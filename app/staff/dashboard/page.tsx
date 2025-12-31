@@ -52,27 +52,30 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE_URL } from "@/lib/config";
 
-// Mock Data for "Daily Run"
-const activeGuests = [
-    { id: 1, name: "Rex", breed: "German Shepherd", status: "Active", alerts: [], fed: true, walked: true, meds: false, img: "https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&w=300&q=80" },
-    { id: 2, name: "Bella", breed: "Golden Retriever", status: "Active", alerts: ["Hip Dysplasia"], fed: true, walked: false, meds: true, img: "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=300&q=80" },
-    { id: 3, name: "Luna", breed: "Husky", status: "Active", alerts: ["Escape Artist"], fed: false, walked: false, meds: false, img: "https://images.unsplash.com/photo-1605568427561-40dd23c2acea?auto=format&fit=crop&w=300&q=80" },
-    { id: 4, name: "Charlie", breed: "Beagle", status: "Active", alerts: [], fed: true, walked: true, meds: null, img: "https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=300&q=80" },
-    { id: 5, name: "Max", breed: "Bulldog", status: "Check-in", alerts: ["Diet Restriction"], fed: false, walked: false, meds: false, img: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=300&q=80" },
-    { id: 6, name: "Daisy", breed: "Poodle", status: "Check-out", alerts: [], fed: true, walked: true, meds: null, img: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=300&q=80" },
-];
+interface GuestPet {
+    id: number;
+    name: string;
+    breed: string;
+    status: 'Active' | 'Check-in' | 'Check-out';
+    alerts: string[];
+    fed: boolean;
+    walked: boolean;
+    meds: boolean | null;
+    img: string;
+}
 
 const MOCK_FINANCIALS = {
     totalRevenue: "$124,500",
     growth: "+12%",
     occupancyRate: "92%",
     adr: "$840",
-    chartData: [40, 65, 45, 80, 55, 90, 70], // Mon-Sun
+    chartData: [40, 65, 45, 80, 55, 90, 70],
     days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 };
 
 export default function StaffDashboard() {
-    const [guests, setGuests] = useState(activeGuests);
+    const [guests, setGuests] = useState<GuestPet[]>([]);
+    const [loadingGuests, setLoadingGuests] = useState(true);
     const [viewMode, setViewMode] = useState<'operations' | 'business'>('operations');
     const [isOwner, setIsOwner] = useState(false);
     const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
@@ -178,7 +181,39 @@ export default function StaffDashboard() {
             setIsOwner(true);
             fetchStaff();
         }
+        // Always fetch pets for the Ops view
+        fetchGuests();
     }, []);
+
+    const fetchGuests = async () => {
+        setLoadingGuests(true);
+        try {
+            const token = localStorage.getItem('vanguard_token');
+            const res = await fetch(`${API_BASE_URL}/api/pets`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const pets = await res.json();
+                // Map API response to GuestPet format
+                const mapped: GuestPet[] = pets.map((p: any) => ({
+                    id: p.id,
+                    name: p.name,
+                    breed: p.breed || 'Unknown',
+                    status: 'Active' as const,
+                    alerts: p.medical_info ? [p.medical_info] : [],
+                    fed: false,
+                    walked: false,
+                    meds: p.medical_info ? false : null,
+                    img: p.photo_url || `https://placedog.net/400/300?id=${p.id}`
+                }));
+                setGuests(mapped);
+            }
+        } catch (e) {
+            console.error("Failed to fetch guests", e);
+        } finally {
+            setLoadingGuests(false);
+        }
+    };
 
     const fetchStaff = async () => {
         try {
@@ -335,7 +370,15 @@ export default function StaffDashboard() {
 
                         {/* Guest Grid */}
                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
-                            {guests.map((guest) => (
+                            {loadingGuests ? (
+                                [1, 2, 3, 4].map(i => (
+                                    <Paper key={i} sx={{ height: 280, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                                ))
+                            ) : guests.length === 0 ? (
+                                <Paper sx={{ gridColumn: '1 / -1', p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                    <Typography color="text.secondary">No guests currently checked in. Add pets via client accounts to see them here.</Typography>
+                                </Paper>
+                            ) : guests.map((guest) => (
                                 <motion.div key={guest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                     <Paper sx={{
                                         overflow: 'hidden',
@@ -381,7 +424,7 @@ export default function StaffDashboard() {
                 {/* --- BUSINESS OVERVIEW (COMMAND CENTER) --- */}
                 {viewMode === 'business' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
+                        <Stack spacing={3}>
 
                             {/* Left Column: Revenue & Stats */}
                             <Stack spacing={3}>
@@ -417,7 +460,7 @@ export default function StaffDashboard() {
                                     </Stack>
                                 </Paper>
 
-                                <Stack direction="row" spacing={3}>
+                                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
                                     <Paper sx={{ flex: 1, p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
                                         <Stack direction="row" spacing={2} alignItems="center" mb={2}>
                                             <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><People /></Avatar>
@@ -518,7 +561,7 @@ export default function StaffDashboard() {
                                     </Button>
                                 </Paper>
                             </Stack>
-                        </Box>
+                        </Stack>
                     </motion.div>
                 )}
 
