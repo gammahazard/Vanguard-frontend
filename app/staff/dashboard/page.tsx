@@ -245,6 +245,44 @@ export default function StaffDashboard() {
         }
     };
 
+    const handleBatchAction = async (bookings: any[], action: 'confirmed' | 'cancelled') => {
+        if (!confirm(`${action === 'confirmed' ? 'Accept' : 'Decline'} all ${bookings.length} requests?`)) return;
+
+        setLoadingBookings(true);
+        const errors: string[] = [];
+        const token = localStorage.getItem('vanguard_token');
+
+        try {
+            await Promise.all(bookings.map(async (b) => {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/bookings/${b.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ status: action })
+                    });
+                    if (!res.ok) errors.push(b.dog_name || "Unknown");
+                } catch (e) {
+                    errors.push(b.dog_name || "Unknown");
+                }
+            }));
+
+            if (errors.length > 0) {
+                setMessage({ text: `Batch action completed with errors for: ${errors.join(', ')}`, severity: "warning", open: true });
+            } else {
+                setMessage({ text: `All ${bookings.length} bookings ${action} successfully!`, severity: "success", open: true });
+            }
+        } catch (e) {
+            console.error("Batch failed", e);
+            setMessage({ text: "Critical batch error", severity: "error", open: true });
+        } finally {
+            fetchPendingBookings();
+            fetchGuests();
+        }
+    };
+
     const handleDeleteStaff = async (email: string) => {
         if (!confirm(`Are you sure you want to terminate ${email}?`)) return;
         try {
@@ -832,11 +870,7 @@ export default function StaffDashboard() {
                                                     variant="outlined"
                                                     color="error"
                                                     size="small"
-                                                    onClick={async () => {
-                                                        if (confirm(`Decline all ${group.bookings.length} requests?`)) {
-                                                            await Promise.all(group.bookings.map((b: any) => handleBookingAction(b.id, 'cancelled')));
-                                                        }
-                                                    }}
+                                                    onClick={() => handleBatchAction(group.bookings, 'cancelled')}
                                                 >
                                                     Decline All
                                                 </Button>
@@ -844,11 +878,7 @@ export default function StaffDashboard() {
                                                     variant="contained"
                                                     color="success"
                                                     size="small"
-                                                    onClick={async () => {
-                                                        if (confirm(`Accept all ${group.bookings.length} requests?`)) {
-                                                            await Promise.all(group.bookings.map((b: any) => handleBookingAction(b.id, 'confirmed')));
-                                                        }
-                                                    }}
+                                                    onClick={() => handleBatchAction(group.bookings, 'confirmed')}
                                                 >
                                                     Accept All ({group.bookings.length})
                                                 </Button>
