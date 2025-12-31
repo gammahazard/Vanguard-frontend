@@ -18,7 +18,9 @@ import {
     CssBaseline,
     Paper,
     Grid,
-    Divider
+    Divider,
+    Tooltip,
+    LinearProgress
 } from "@mui/material";
 import {
     ArrowForward,
@@ -29,7 +31,9 @@ import {
     Email,
     Lock,
     Visibility,
-    VisibilityOff
+    VisibilityOff,
+    Info,
+    Cancel
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 
@@ -44,6 +48,13 @@ export default function ClientSignup() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    // Password requirement checks
+    const hasMinLength = password.length >= 5;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const allRequirementsMet = hasMinLength && hasUppercase && hasSpecialChar;
+    const passwordStrength = [hasMinLength, hasUppercase, hasSpecialChar].filter(Boolean).length;
 
     const handleRegister = async () => {
         if (password !== confirmPassword) {
@@ -132,7 +143,7 @@ export default function ClientSignup() {
                             {/* Header */}
                             <Box textAlign="center">
                                 <Typography variant="overline" color="primary" fontWeight="bold" letterSpacing={2}>
-                                    Membership Application
+                                    Create Account
                                 </Typography>
                                 <Typography variant="h4" color="white" fontWeight={300} sx={{ mt: 1 }}>
                                     Join Vanguard
@@ -206,6 +217,38 @@ export default function ClientSignup() {
                                     }}
                                 />
 
+                                {/* Password Requirements */}
+                                {password.length > 0 && (
+                                    <Box sx={{ mt: -1 }}>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={(passwordStrength / 3) * 100}
+                                            sx={{
+                                                height: 4,
+                                                borderRadius: 2,
+                                                bgcolor: 'rgba(255,255,255,0.1)',
+                                                '& .MuiLinearProgress-bar': {
+                                                    bgcolor: passwordStrength === 3 ? '#4ade80' : passwordStrength === 2 ? '#facc15' : '#ef4444'
+                                                }
+                                            }}
+                                        />
+                                        <Stack direction="row" spacing={2} sx={{ mt: 1 }} flexWrap="wrap">
+                                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                {hasMinLength ? <CheckCircle sx={{ fontSize: 14, color: '#4ade80' }} /> : <Cancel sx={{ fontSize: 14, color: '#ef4444' }} />}
+                                                <Typography variant="caption" sx={{ color: hasMinLength ? '#4ade80' : 'text.secondary' }}>5+ chars</Typography>
+                                            </Stack>
+                                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                {hasUppercase ? <CheckCircle sx={{ fontSize: 14, color: '#4ade80' }} /> : <Cancel sx={{ fontSize: 14, color: '#ef4444' }} />}
+                                                <Typography variant="caption" sx={{ color: hasUppercase ? '#4ade80' : 'text.secondary' }}>Uppercase</Typography>
+                                            </Stack>
+                                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                {hasSpecialChar ? <CheckCircle sx={{ fontSize: 14, color: '#4ade80' }} /> : <Cancel sx={{ fontSize: 14, color: '#ef4444' }} />}
+                                                <Typography variant="caption" sx={{ color: hasSpecialChar ? '#4ade80' : 'text.secondary' }}>Special char</Typography>
+                                            </Stack>
+                                        </Stack>
+                                    </Box>
+                                )}
+
                                 <TextField
                                     fullWidth
                                     type={showConfirmPassword ? "text" : "password"}
@@ -229,7 +272,7 @@ export default function ClientSignup() {
                                 <Box sx={{ p: 2, bgcolor: 'rgba(212, 175, 55, 0.05)', borderRadius: 2, display: 'flex', gap: 2 }}>
                                     <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                                     <Typography variant="caption" color="text.secondary">
-                                        By requesting access, you agree to our specialized care protocols. Approvals processed within 24 hours.
+                                        By requesting access, you agree to our specialized care protocols. After signup, you can enable Face ID for instant logins.
                                     </Typography>
                                 </Box>
 
@@ -238,7 +281,7 @@ export default function ClientSignup() {
                                     variant="contained"
                                     size="large"
                                     onClick={handleRegister}
-                                    disabled={loading || !name || !email || !password || password !== confirmPassword}
+                                    disabled={loading || !name || !email || !password || password !== confirmPassword || !allRequirementsMet}
                                     endIcon={<ArrowForward />}
                                 >
                                     {loading ? "Processing..." : "Submit Application"}
