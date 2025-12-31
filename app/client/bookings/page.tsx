@@ -177,6 +177,14 @@ export default function BookingsView() {
         return false;
     };
 
+    const isStayTooLong = (start: string, end: string) => {
+        if (!start || !end) return false;
+        const s = new Date(start);
+        const e = new Date(end);
+        const diff = Math.ceil(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return diff > 30;
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -331,6 +339,11 @@ export default function BookingsView() {
                                         One or more days in this range are fully booked.
                                     </Alert>
                                 )}
+                                {isStayTooLong(formData.start_date, formData.end_date) && (
+                                    <Alert severity="warning" sx={{ bgcolor: 'rgba(255, 152, 0, 0.1)', color: '#ff9800', border: '1px solid rgba(255, 152, 0, 0.2)' }}>
+                                        Maximum stay is 30 days. For longer periods, please contact us.
+                                    </Alert>
+                                )}
                                 <TextField
                                     label="Stay Notes"
                                     fullWidth
@@ -357,7 +370,7 @@ export default function BookingsView() {
                         <Button variant="contained"
                             disabled={
                                 formData.dog_ids.length === 0 ||
-                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date))) ||
+                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date))) ||
                                 (activeStep === 2 && submitting)
                             }
                             onClick={activeStep < 2 ? handleNext : handleCreateBooking}
