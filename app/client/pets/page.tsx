@@ -45,6 +45,7 @@ export default function PetsView() {
         vet_name: "",
         vet_phone: ""
     });
+    const [customTemp, setCustomTemp] = useState("");
 
     const handleNavChange = (newValue: number) => {
         setNavValue(newValue);
@@ -87,6 +88,7 @@ export default function PetsView() {
                 body: JSON.stringify({
                     owner_email: email,
                     ...formData,
+                    temperament: formData.temperament === 'Other' ? customTemp : formData.temperament,
                     age: parseInt(formData.age) || 0,
                     weight: parseFloat(formData.weight) || 0.0,
                     image_url: ""
@@ -121,6 +123,7 @@ export default function PetsView() {
                     id: editingPet.id,
                     owner_email: email,
                     ...formData,
+                    temperament: formData.temperament === 'Other' ? customTemp : formData.temperament,
                     age: parseInt(formData.age) || 0,
                     weight: parseFloat(formData.weight) || 0.0,
                     image_url: editingPet.image_url
@@ -181,6 +184,10 @@ export default function PetsView() {
             vet_name: pet.vet_name || "",
             vet_phone: pet.vet_phone || ""
         });
+        setCustomTemp(pet.temperament && !['Friendly', 'Relaxed', 'Energetic', 'Protective', 'Anxious'].includes(pet.temperament) ? pet.temperament : "");
+        if (pet.temperament && !['Friendly', 'Relaxed', 'Energetic', 'Protective', 'Anxious'].includes(pet.temperament)) {
+            setFormData(prev => ({ ...prev, temperament: 'Other' }));
+        }
         setOpenEdit(true);
     };
 
@@ -236,13 +243,33 @@ export default function PetsView() {
                                 <TextField label="Age" type="number" fullWidth value={formData.age} onChange={e => setFormData({ ...formData, age: e.target.value })} variant="filled" />
                                 <TextField label="Weight (kg)" type="number" fullWidth value={formData.weight} onChange={e => setFormData({ ...formData, weight: e.target.value })} variant="filled" />
                             </Stack>
-                            <TextField select label="Temperament" fullWidth value={formData.temperament} onChange={e => setFormData({ ...formData, temperament: e.target.value })} variant="filled">
+                            <TextField select label="Temperament" fullWidth value={formData.temperament} onChange={e => {
+                                const val = e.target.value;
+                                setFormData({ ...formData, temperament: val });
+                                if (val !== 'Other') setCustomTemp(""); // Clear custom if not 'Other'
+                            }} variant="filled">
                                 <MenuItem value="Friendly">Friendly</MenuItem>
                                 <MenuItem value="Relaxed">Relaxed</MenuItem>
                                 <MenuItem value="Energetic">Energetic</MenuItem>
                                 <MenuItem value="Protective">Protective</MenuItem>
                                 <MenuItem value="Anxious">Anxious</MenuItem>
+                                <MenuItem value="Other">Other...</MenuItem>
                             </TextField>
+
+                            {formData.temperament === 'Other' && (
+                                <TextField
+                                    label="Custom Temperament"
+                                    fullWidth
+                                    autoFocus
+                                    value={customTemp}
+                                    onChange={e => {
+                                        const val = e.target.value.substring(0, 30).replace(/[<>]/g, ""); // Max 30 chars, basic sanitization
+                                        setCustomTemp(val);
+                                    }}
+                                    variant="filled"
+                                    placeholder="e.g. Very Cuddly"
+                                />
+                            )}
                             <TextField label="Allergies" fullWidth value={formData.allergies} onChange={e => setFormData({ ...formData, allergies: e.target.value })} variant="filled" placeholder="N/A" />
                             <TextField label="Medical Notes" fullWidth multiline rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} variant="filled" placeholder="Medications, behavioral notes..." />
                             <Divider sx={{ my: 1, opacity: 0.1 }} />

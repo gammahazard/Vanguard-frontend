@@ -181,10 +181,14 @@ export default function BookingsView() {
                                 <Box display="flex" justifyContent="center" py={4}><CircularProgress size={24} /></Box>
                             ) : upcomingBookings.length === 0 ? (
                                 <Paper sx={{ mt: 1, p: 4, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
-                                    <CalendarMonth sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
-                                    <Typography variant="h6" color="text.secondary">Ready for a getaway?</Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Book a professional stay for your VIP.</Typography>
-                                    <Button variant="outlined" startIcon={<Add />} onClick={() => setShowWizard(true)}>New Booking</Button>
+                                    <Pets sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+                                    <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>Register your VIPS first</Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 300, mx: 'auto' }}>
+                                        Please register your VIPS (Very Important Pups) you want us to care for in order to begin the booking process.
+                                    </Typography>
+                                    <Button variant="contained" startIcon={<Pets />} onClick={() => router.push('/client/pets')} sx={{ bgcolor: '#D4AF37', color: 'black' }}>
+                                        Register VIP
+                                    </Button>
                                 </Paper>
                             ) : (
                                 <Stack spacing={2} sx={{ mt: 1 }}>
@@ -208,7 +212,13 @@ export default function BookingsView() {
                     </Stack>
                 </Container>
 
-                <Fab color="primary" sx={{ position: 'fixed', bottom: 90, right: 24, bgcolor: '#D4AF37' }} onClick={() => setShowWizard(true)}><Add /></Fab>
+                <Fab
+                    color="primary"
+                    sx={{ position: 'fixed', bottom: 90, right: 24, bgcolor: '#D4AF37' }}
+                    onClick={() => pets.length > 0 ? setShowWizard(true) : router.push('/client/pets')}
+                >
+                    <Add />
+                </Fab>
 
                 {/* Wizard Dialog */}
                 <Dialog open={showWizard} onClose={() => !submitting && setShowWizard(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 3 } }}>
