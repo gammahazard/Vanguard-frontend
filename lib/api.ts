@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "./config";
+export { API_BASE_URL };
 
 interface FetchOptions extends RequestInit {
     headers?: Record<string, string>;

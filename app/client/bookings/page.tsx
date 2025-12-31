@@ -16,6 +16,7 @@ import { API_BASE_URL } from "@/lib/config";
 import { sanitizeInput } from "@/lib/security";
 
 import { authenticatedFetch } from "@/lib/api";
+import { Service } from "@/types";
 
 export default function BookingsView() {
     const router = useRouter();
@@ -25,6 +26,7 @@ export default function BookingsView() {
     const [bookings, setBookings] = useState<any[]>([]);
     const [pets, setPets] = useState<any[]>([]);
     const [availability, setAvailability] = useState<string[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -64,15 +66,17 @@ export default function BookingsView() {
         if (!email) return;
 
         try {
-            const [bookingsRes, petsRes, availRes] = await Promise.all([
+            const [bookingsRes, petsRes, availRes, servicesRes] = await Promise.all([
                 authenticatedFetch(`/api/user/bookings`),
                 authenticatedFetch(`/api/pets`),
-                authenticatedFetch(`/api/bookings/availability`)
+                authenticatedFetch(`/api/bookings/availability`),
+                authenticatedFetch(`/api/services`)
             ]);
 
             if (bookingsRes.ok) setBookings(await bookingsRes.json());
             if (petsRes.ok) setPets(await petsRes.json());
             if (availRes.ok) setAvailability(await availRes.json());
+            if (servicesRes.ok) setServices(await servicesRes.json());
         } catch (err) {
             console.error("Fetch failed", err);
             setError("Failed to sync with server.");
@@ -93,14 +97,14 @@ export default function BookingsView() {
             const diffTime = Math.abs(end.getTime() - start.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive
 
-            let dailyRate = 45; // Standard Boarding
-            if (formData.service_type === "Grooming") dailyRate = 65;
-            if (formData.service_type === "Daycare") dailyRate = 35;
+            // Dynamic Pricing from Backend
+            const service = services.find(s => s.name === formData.service_type);
+            const dailyRate = service ? service.price : 0;
 
             let total = diffDays * dailyRate * (formData.dog_ids.length || 1);
             setFormData(prev => ({ ...prev, total_price: total }));
         }
-    }, [formData.start_date, formData.end_date, formData.service_type, formData.dog_ids]);
+    }, [formData.start_date, formData.end_date, formData.service_type, formData.dog_ids, services]);
 
     const handleNext = () => setActiveStep((prev) => prev + 1);
     const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -141,9 +145,8 @@ export default function BookingsView() {
         if (!bookingToCancel) return;
         setCancelling(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingToCancel.id}`, {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${bookingToCancel.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: "Cancelled" })
             });
 

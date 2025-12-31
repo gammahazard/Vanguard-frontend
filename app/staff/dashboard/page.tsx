@@ -26,7 +26,7 @@ import {
     InputAdornment,
     Switch,
     Badge as MuiBadge,
-    Grid
+
 } from "@mui/material";
 import {
     Restaurant,
@@ -47,7 +47,7 @@ import {
     Face,
     CheckCircle,
     Cancel,
-    Message,
+    Message as MessageIcon,
     Assignment as AssignmentIcon,
     Badge,
     Send,
@@ -58,20 +58,13 @@ import {
 } from "@mui/icons-material";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { API_BASE_URL } from "@/lib/config";
-
-interface GuestPet {
-    id: string;
-    name: string;
-    breed: string;
-    status: 'Active' | 'Check-in' | 'Check-out';
-    alerts: string[];
-    fed: boolean;
-    walked: boolean;
-    meds: boolean | null;
-    img: string;
-    owner_email: string;
-}
+import { API_BASE_URL, authenticatedFetch } from '@/lib/api';
+import BookingRequestManager from './components/BookingRequestManager';
+import OperationsStats from './components/OperationsStats';
+import ServiceManager from './components/ServiceManager';
+import GuestList from './components/GuestList';
+import ClientDirectory from './components/ClientDirectory';
+import { GuestPet, UserWithPets, GroupedBookingRequest, EnrichedBooking, Message, User, Pet, Booking } from '@/types';
 
 const MOCK_FINANCIALS = {
     totalRevenue: "$124,500",
@@ -90,9 +83,10 @@ export default function StaffDashboard() {
     const [message, setMessage] = useState({ text: "", severity: "info" as any, open: false });
 
     // States for Staff 2.0 & Phase 10
-    const [pendingBookings, setPendingBookings] = useState<any[]>([]);
-    const [recentBookings, setRecentBookings] = useState<any[]>([]);
-    const [clients, setClients] = useState<any[]>([]);
+    const [pendingBookings, setPendingBookings] = useState<GroupedBookingRequest[]>([]);
+    const [recentBookings, setRecentBookings] = useState<GroupedBookingRequest[]>([]);
+    const [todaysArrivals, setTodaysArrivals] = useState<EnrichedBooking[]>([]);
+    const [clients, setClients] = useState<UserWithPets[]>([]);
     const [loadingBookings, setLoadingBookings] = useState(false);
     const [loadingClients, setLoadingClients] = useState(false);
 
@@ -133,23 +127,23 @@ export default function StaffDashboard() {
     }, [clients]);
 
     // Detail & Modal States
-    const [selectedClient, setSelectedClient] = useState<any>(null);
+    const [selectedClient, setSelectedClient] = useState<UserWithPets | null>(null);
     const [showPetModal, setShowPetModal] = useState(false);
     const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [showIncidentModal, setShowIncidentModal] = useState(false);
-    const [selectedPet, setSelectedPet] = useState<any>(null);
+    const [selectedPet, setSelectedPet] = useState<Pet | GuestPet | null>(null);
     const [incidentText, setIncidentText] = useState("");
     const [incidentSeverity, setIncidentSeverity] = useState("Warning");
 
     // Messaging States
-    const [activeChat, setActiveChat] = useState<any>(null);
+    const [activeChat, setActiveChat] = useState<UserWithPets | null>(null);
     const [newMessage, setNewMessage] = useState("");
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [sendingMsg, setSendingMsg] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     // Staff Management State
     const [openAddStaff, setOpenAddStaff] = useState(false);
-    const [staffList, setStaffList] = useState<any[]>([]);
+    const [staffList, setStaffList] = useState<User[]>([]);
     const [loadingStaff, setLoadingStaff] = useState(false);
     const [newStaff, setNewStaff] = useState({ name: "", email: "", password: "", role: "staff" });
     const [showPassword, setShowPassword] = useState(false);
@@ -181,47 +175,48 @@ export default function StaffDashboard() {
         return () => clearInterval(interval);
     }, [viewMode, activeChat]);
 
+    const groupBookings = (bookings: EnrichedBooking[]): GroupedBookingRequest[] => {
+        return Object.values(bookings.reduce((acc: any, booking: EnrichedBooking) => {
+            const groupKey = `${booking.user_email}_${booking.start_date}_${booking.end_date}`;
+            if (!acc[groupKey]) {
+                acc[groupKey] = {
+                    id: groupKey,
+                    owner_name: booking.owner_name || booking.user_email,
+                    owner_email: booking.user_email,
+                    start_date: booking.start_date,
+                    end_date: booking.end_date,
+                    bookings: []
+                };
+            }
+            acc[groupKey].bookings.push(booking);
+            return acc;
+        }, {}));
+    };
+
     const fetchPendingBookings = async () => {
         setLoadingBookings(true);
         try {
-            const token = localStorage.getItem('vanguard_token');
             // Use staff endpoint to see ALL pending bookings
-            const resBookings = await fetch(`${API_BASE_URL}/api/staff/bookings`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (resBookings.ok) {
-                const data = await resBookings.json();
-                // Filter for Pending bookings (case-insensitive)
-                setPendingBookings(data.filter((b: any) => b.status?.toLowerCase() === 'pending') || []);
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/staff/bookings`);
 
-                // Group LAST 5 CONFIRMED ORDERS (not just bookings)
+            if (res.ok) {
+                const data = await res.json();
+
+                // 1. Separate Pending vs Confirmed
+                const pending = data.filter((b: any) => b.status?.toLowerCase() === 'pending');
                 const confirmed = data.filter((b: any) => b.status?.toLowerCase() === 'confirmed');
-                const groupedConfirmed = Object.values(
-                    confirmed.reduce((acc: any, booking: any) => {
-                        const groupKey = `${booking.user_email}_${booking.start_date}_${booking.end_date}`;
-                        if (!acc[groupKey]) {
-                            acc[groupKey] = {
-                                id: groupKey,
-                                owner_name: booking.owner_name || booking.user_email,
-                                owner_email: booking.user_email,
-                                start_date: booking.start_date,
-                                end_date: booking.end_date,
-                                bookings: []
-                            };
-                        }
-                        acc[groupKey].bookings.push(booking);
-                        return acc;
-                    }, {})
-                );
 
-                // Sort by most recent start date (optional, but good for "Recent")
-                // Assuming data is already sorted by backend, but grouping might lose order if we use object values directly
-                // (Object.values order is not guaranteed to match insertion order strictly in all envs, but usually fine)
-                // Let's re-sort to be safe:
-                // Actually, backend sorts by start_date DESC.
-                // We'll trust the reduction kept order roughly or just slice.
+                // 2. Set Pending Groups
+                setPendingBookings(groupBookings(pending));
 
+                // 3. Set Recent Groups (Last 5)
+                const groupedConfirmed = groupBookings(confirmed);
                 setRecentBookings(groupedConfirmed.slice(0, 5));
+
+                // 4. Set Today's Arrivals (Confirmed only)
+                const todayStr = new Date().toDateString();
+                const arrivals = confirmed.filter((b: any) => new Date(b.start_date).toDateString() === todayStr);
+                setTodaysArrivals(arrivals);
             }
         } catch (e) {
             console.error(e);
@@ -233,10 +228,7 @@ export default function StaffDashboard() {
     const fetchClients = async () => {
         setLoadingClients(true);
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/staff/clients`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/staff/clients`);
             if (res.ok) {
                 const data = await res.json();
                 setClients(data);
@@ -250,43 +242,34 @@ export default function StaffDashboard() {
 
     const handleBookingAction = async (id: string, action: 'confirmed' | 'cancelled') => {
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({ status: action })
             });
+
             if (res.ok) {
                 setMessage({ text: `Booking ${action} successfully!`, severity: "success", open: true });
                 fetchPendingBookings();
                 fetchGuests();
             } else {
-                setMessage({ text: `Update failed: ${res.status} ${res.statusText}`, severity: "error", open: true });
+                setMessage({ text: `Update failed`, severity: "error", open: true });
             }
         } catch (e) {
             setMessage({ text: "Failed to update booking", severity: "error", open: true });
         }
     };
 
-    const handleBatchAction = async (bookings: any[], action: 'confirmed' | 'cancelled') => {
+    const handleBatchAction = async (bookings: EnrichedBooking[] | GroupedBookingRequest['bookings'], action: 'confirmed' | 'cancelled') => {
         if (!confirm(`${action === 'confirmed' ? 'Accept' : 'Decline'} all ${bookings.length} requests?`)) return;
 
         setLoadingBookings(true);
         const errors: string[] = [];
-        const token = localStorage.getItem('vanguard_token');
 
         try {
             await Promise.all(bookings.map(async (b) => {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/bookings/${b.id}`, {
+                    const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${b.id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
                         body: JSON.stringify({ status: action })
                     });
                     if (!res.ok) errors.push(b.dog_name || "Unknown");
@@ -312,10 +295,8 @@ export default function StaffDashboard() {
     const handleDeleteStaff = async (email: string) => {
         if (!confirm(`Are you sure you want to terminate ${email}?`)) return;
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/admin/staff/${encodeURIComponent(email)}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/admin/staff/${encodeURIComponent(email)}`, {
+                method: 'DELETE'
             });
             if (res.ok) {
                 setMessage({ text: "Staff member removed", severity: "info", open: true });
@@ -329,10 +310,7 @@ export default function StaffDashboard() {
     const fetchGuests = async () => {
         setLoadingGuests(true);
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/pets`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/pets`);
             if (res.ok) {
                 const pets = await res.json();
                 const mapped: GuestPet[] = pets.map((p: any) => ({
@@ -357,10 +335,7 @@ export default function StaffDashboard() {
 
     const fetchStaff = async () => {
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/admin/staff`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/admin/staff`);
             if (res.ok) {
                 const data = await res.json();
                 setStaffList(data);
@@ -375,13 +350,8 @@ export default function StaffDashboard() {
         setFormSuccess("");
         setLoadingStaff(true);
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/users`, {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/users`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify(newStaff)
             });
             if (res.ok) {
@@ -390,11 +360,10 @@ export default function StaffDashboard() {
                 fetchStaff();
                 setTimeout(() => setOpenAddStaff(false), 1500);
             } else {
-                const text = await res.text();
-                setFormError(`[${res.status}] ${text || "Failed to add employee"}`);
+                setFormError("Failed to add employee");
             }
         } catch (e: any) {
-            setFormError(`Network error: ${e.message}`);
+            setFormError(`Failed to add employee: ${e.message}`);
         } finally {
             setLoadingStaff(false);
         }
@@ -411,10 +380,7 @@ export default function StaffDashboard() {
 
     const fetchMessages = async (targetEmail: string) => {
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/messages?email=${encodeURIComponent(targetEmail)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/messages?email=${encodeURIComponent(targetEmail)}`);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
@@ -427,10 +393,8 @@ export default function StaffDashboard() {
 
     const markAsRead = async (email: string) => {
         try {
-            const token = localStorage.getItem('vanguard_token');
-            await fetch(`${API_BASE_URL}/api/messages/read`, {
+            await authenticatedFetch(`${API_BASE_URL}/api/messages/read`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ sender_email: email })
             });
             setClients(prev => prev.map(c => c.email === email ? { ...c, unread_messages_count: 0 } : c));
@@ -443,21 +407,17 @@ export default function StaffDashboard() {
         if (!newMessage.trim() || !activeChat) return;
         setSendingMsg(true);
         try {
-            const token = localStorage.getItem('vanguard_token');
             const senderEmail = localStorage.getItem('vanguard_email');
-            const res = await fetch(`${API_BASE_URL}/api/messages`, {
+            await authenticatedFetch(`${API_BASE_URL}/api/messages`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     sender: senderEmail,
                     receiver: activeChat.email,
                     content: newMessage
                 })
             });
-            if (res.ok) {
-                setNewMessage("");
-                fetchMessages(activeChat.email);
-            }
+            setNewMessage("");
+            fetchMessages(activeChat.email);
         } catch (e) {
             console.error("Send failed", e);
         } finally {
@@ -468,10 +428,8 @@ export default function StaffDashboard() {
     const handleLogIncident = async () => {
         if (!incidentText.trim() || !selectedPet) return;
         try {
-            const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/incidents`, {
+            await authenticatedFetch(`${API_BASE_URL}/api/incidents`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     id: Math.random().toString(36).substr(2, 9),
                     booking_id: "ops_log",
@@ -480,12 +438,10 @@ export default function StaffDashboard() {
                     severity: incidentSeverity
                 })
             });
-            if (res.ok) {
-                setMessage({ text: "Alert logged successfully!", severity: "success", open: true });
-                setShowIncidentModal(false);
-                setIncidentText("");
-                fetchGuests();
-            }
+            setMessage({ text: "Alert logged successfully!", severity: "success", open: true });
+            setShowIncidentModal(false);
+            setIncidentText("");
+            fetchGuests();
         } catch (e) {
             console.error("Incident log failed", e);
         }
@@ -591,79 +547,17 @@ export default function StaffDashboard() {
                 {/* --- OPERATIONS VIEW --- */}
                 {viewMode === 'operations' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        {/* KPI Cards */}
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3, mb: 4 }}>
-                            {[
-                                { label: "Guests In House", value: "14", color: "primary.main" },
-                                { label: "Check-Ins Today", value: "3", color: "text.primary" },
-                                { label: "Departures", value: "5", color: "text.secondary" },
-                                { label: "Pending Walks", value: "8", color: "#ef4444" },
-                            ].map((kpi, i) => (
-                                <Paper key={i} sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <Typography variant="h3" fontWeight="bold" sx={{ color: kpi.color }}>
-                                        {kpi.value}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" fontWeight="medium">
-                                        {kpi.label}
-                                    </Typography>
-                                </Paper>
-                            ))}
-                        </Box>
-
-                        {/* Guest Grid */}
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
-                            {loadingGuests ? (
-                                [1, 2, 3, 4].map(i => (
-                                    <Paper key={i} sx={{ height: 280, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                                ))
-                            ) : guests.length === 0 ? (
-                                <Paper sx={{ gridColumn: '1 / -1', p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)' }}>
-                                    <Typography color="text.secondary">No guests currently checked in. Add pets via client accounts to see them here.</Typography>
-                                </Paper>
-                            ) : guests.map((guest) => (
-                                <motion.div key={guest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    <Paper sx={{
-                                        overflow: 'hidden',
-                                        borderRadius: 3,
-                                        bgcolor: 'background.paper',
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                        transition: 'transform 0.2s',
-                                        '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)' }
-                                    }}>
-                                        {/* Card Content (unchanged) */}
-                                        <Box sx={{ position: 'relative', height: 160 }}>
-                                            <Box component="img" src={guest.img} alt={guest.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, transparent 60%)' }} />
-                                            <Box sx={{ position: 'absolute', bottom: 16, left: 16 }}>
-                                                <Typography variant="h5" fontWeight="bold" color="white">{guest.name}</Typography>
-                                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>{guest.breed}</Typography>
-                                            </Box>
-                                            <Chip label={guest.status} size="small" sx={{ position: 'absolute', top: 12, right: 12, bgcolor: guest.status === 'Active' ? '#22c55e' : '#f59e0b', color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }} />
-                                        </Box>
-                                        <Box sx={{ p: 2 }}>
-                                            {guest.alerts.length > 0 && (
-                                                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                                                    {guest.alerts.map(alert => (
-                                                        <Chip key={alert} label={alert} size="small" icon={<Warning sx={{ fontSize: '14px !important' }} />} sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', border: '1px solid' }} />
-                                                    ))}
-                                                </Stack>
-                                            )}
-                                            <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 1, borderRadius: 2 }}>
-                                                <Tooltip title="Breakfast/Dinner"><IconButton onClick={() => toggleAction(guest.id, 'fed')} sx={{ color: guest.fed ? '#22c55e' : 'text.disabled', bgcolor: guest.fed ? 'rgba(34, 197, 94, 0.1)' : 'transparent' }}><Restaurant fontSize="small" /></IconButton></Tooltip>
-                                                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                                <Tooltip title="Daily Walk"><IconButton onClick={() => toggleAction(guest.id, 'walked')} sx={{ color: guest.walked ? '#3b82f6' : 'text.disabled', bgcolor: guest.walked ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}><DirectionsWalk fontSize="small" /></IconButton></Tooltip>
-                                                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                                <Tooltip title="Medication"><IconButton onClick={() => guest.meds !== null && toggleAction(guest.id, 'meds')} disabled={guest.meds === null} sx={{ color: guest.meds ? '#a855f7' : (guest.meds === null ? 'rgba(255,255,255,0.05)' : 'text.disabled'), bgcolor: guest.meds ? 'rgba(168, 85, 247, 0.1)' : 'transparent' }}><Medication fontSize="small" /></IconButton></Tooltip>
-                                                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                                <Tooltip title="Log Care Alert"><IconButton onClick={() => { setSelectedPet(guest); setShowIncidentModal(true); }} sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><CrisisAlert fontSize="small" /></IconButton></Tooltip>
-                                            </Stack>
-                                        </Box>
-                                    </Paper>
-                                </motion.div>
-                            ))}
-                        </Box>
+                        <OperationsStats />
+                        <GuestList
+                            guests={guests}
+                            loading={loadingGuests}
+                            onToggleAction={toggleAction}
+                            onLogIncident={(pet) => { setSelectedPet(pet); setShowIncidentModal(true); }}
+                        />
                     </motion.div>
                 )}
+
+
 
                 {/* --- BUSINESS OVERVIEW (COMMAND CENTER) --- */}
                 {viewMode === 'business' && (
@@ -796,7 +690,7 @@ export default function StaffDashboard() {
                                 {/* Global Comms Shortcut */}
                                 <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                                        <Message sx={{ color: 'text.secondary' }} />
+                                        <MessageIcon sx={{ color: 'text.secondary' }} />
                                         <Typography variant="h6" fontWeight="bold">Global Comms</Typography>
                                     </Stack>
                                     <Typography variant="body2" color="text.secondary" mb={2}>
@@ -813,275 +707,56 @@ export default function StaffDashboard() {
                                 </Paper>
                             </Stack>
                         </Stack>
+
+                        {isOwner && (
+                            <Box sx={{ mt: 6 }}>
+                                <ServiceManager />
+                            </Box>
+                        )}
                     </motion.div>
                 )}
 
                 {/* --- BOOKING REQUESTS VIEW --- */}
                 {viewMode === 'requests' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, color: 'white' }}>Pending Booking Requests</Typography>
-                        <Stack spacing={2}>
-                            {loadingBookings ? (
-                                <Box sx={{ py: 4, textAlign: 'center' }}>
-                                    <CircularProgress size={32} sx={{ color: '#3b82f6' }} />
-                                </Box>
-                            ) : pendingBookings.length === 0 ? (
-                                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                    <Typography color="#64748b">No pending requests at this time.</Typography>
-                                </Paper>
-                            ) : (
-                                // Group bookings by Owner & Date
-                                Object.values(
-                                    pendingBookings.reduce((acc: any, booking: any) => {
-                                        const groupKey = `${booking.user_email}_${booking.start_date}_${booking.end_date}`;
-                                        if (!acc[groupKey]) {
-                                            acc[groupKey] = {
-                                                id: groupKey,
-                                                owner_name: booking.owner_name || booking.user_email,
-                                                owner_email: booking.user_email,
-                                                start_date: booking.start_date,
-                                                end_date: booking.end_date,
-                                                bookings: []
-                                            };
-                                        }
-                                        acc[groupKey].bookings.push(booking);
-                                        return acc;
-                                    }, {})
-                                ).map((group: any) => (
-                                    <Paper key={group.id} sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'flex-start' }} spacing={2}>
-                                            <Stack direction="row" spacing={2} alignItems="flex-start">
-                                                <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-                                                    {group.bookings.length > 1 ? <AssignmentIcon /> : <AssignmentIcon />}
-                                                </Avatar>
-                                                <Box>
-                                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                                        <Typography fontWeight="bold" color="white" variant="h6">
-                                                            order for {group.bookings.length} Guest{group.bookings.length > 1 ? 's' : ''}
-                                                        </Typography>
-                                                        {group.bookings.length > 1 && (
-                                                            <Chip label="Group Order" size="small" sx={{ height: 20, bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontSize: '0.65rem' }} />
-                                                        )}
-                                                    </Stack>
-
-                                                    <Typography variant="caption" color="#94a3b8" display="block">
-                                                        Client: {group.owner_name}
-                                                    </Typography>
-                                                    <Typography variant="body2" sx={{ mt: 0.5, color: '#e2e8f0' }}>
-                                                        Dates: {new Date(group.start_date).toLocaleDateString()} - {new Date(group.end_date).toLocaleDateString()}
-                                                    </Typography>
-
-                                                    {/* List of Dogs */}
-                                                    <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', gap: 1 }}>
-                                                        {group.bookings.map((b: any) => (
-                                                            <Chip
-                                                                key={b.id}
-                                                                label={`${b.dog_name} (${b.service_type})`}
-                                                                size="small"
-                                                                sx={{
-                                                                    bgcolor: 'rgba(255,255,255,0.05)',
-                                                                    color: '#cbd5e1',
-                                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                                    maxWidth: '100%',
-                                                                    mb: 1
-                                                                }}
-                                                            />
-                                                        ))}
-                                                    </Stack>
-                                                </Box>
-                                            </Stack>
-
-                                            <Stack direction="row" spacing={1} sx={{ mt: { xs: 2, md: 0 } }}>
-                                                <Button
-                                                    variant="outlined"
-                                                    color="error"
-                                                    size="small"
-                                                    onClick={() => handleBatchAction(group.bookings, 'cancelled')}
-                                                >
-                                                    Decline All
-                                                </Button>
-                                                <Button
-                                                    variant="contained"
-                                                    color="success"
-                                                    size="small"
-                                                    onClick={() => handleBatchAction(group.bookings, 'confirmed')}
-                                                >
-                                                    Accept All ({group.bookings.length})
-                                                </Button>
-                                            </Stack>
-                                        </Stack>
-                                    </Paper>
-                                ))
-                            )}
-                        </Stack>
-
-                        <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
-
-                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <History sx={{ color: '#D4AF37' }} /> Recent Confirmations
-                        </Typography>
-                        <Stack spacing={2}>
-                            {recentBookings.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary">No recently confirmed bookings.</Typography>
-                            ) : recentBookings.map((group: any) => (
-                                <Paper key={group.id} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', opacity: 0.9 }}>
-                                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
-                                        <Stack direction="row" spacing={2} alignItems="flex-start">
-                                            <Avatar sx={{ bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', width: 32, height: 32 }}>
-                                                {group.bookings.length > 1 ? <AssignmentIcon sx={{ fontSize: 18 }} /> : <CheckCircle sx={{ fontSize: 18 }} />}
-                                            </Avatar>
-                                            <Box>
-                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Typography variant="body2" fontWeight="bold" color="white">
-                                                        {group.bookings.length > 1 ? `Order for ${group.bookings.length} Guests` : group.bookings[0].dog_name}
-                                                    </Typography>
-                                                    {group.bookings.length > 1 && (
-                                                        <Chip label="Group Order" size="small" sx={{ height: 16, bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontSize: '0.6rem' }} />
-                                                    )}
-                                                </Stack>
-                                                <Typography variant="caption" color="#64748b" display="block">
-                                                    {new Date(group.start_date).toLocaleDateString()} - {group.owner_name}
-                                                </Typography>
-
-                                                {/* List of Dogs for Groups */}
-                                                {group.bookings.length > 1 && (
-                                                    <Stack direction="row" spacing={0.5} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                                                        {group.bookings.map((b: any) => (
-                                                            <Chip
-                                                                key={b.id}
-                                                                label={b.dog_name}
-                                                                size="small"
-                                                                sx={{ height: 20, fontSize: '0.7rem', bgcolor: 'rgba(255,255,255,0.05)', color: '#cbd5e1' }}
-                                                            />
-                                                        ))}
-                                                    </Stack>
-                                                )}
-                                            </Box>
-                                        </Stack>
-                                        <Button
-                                            variant="outlined"
-                                            color="warning"
-                                            size="small"
-                                            onClick={() => handleBatchAction(group.bookings, 'cancelled')}
-                                            sx={{ fontSize: '0.7rem', py: 0.5, whiteSpace: 'nowrap' }}
-                                        >
-                                            Cancel / Revert Order
-                                        </Button>
-                                    </Stack>
-                                </Paper>
-                            ))}
-                        </Stack>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ width: '100%' }}>
+                        <BookingRequestManager
+                            pendingBookings={pendingBookings}
+                            recentBookings={recentBookings}
+                            loading={loadingBookings}
+                            onAction={handleBatchAction}
+                            onChat={(email) => {
+                                const client = clients.find(c => c.email === email);
+                                if (client) {
+                                    setActiveChat(client);
+                                    setViewMode('comms');
+                                }
+                            }}
+                        />
                     </motion.div>
                 )}
 
                 {/* --- CLIENT DIRECTORY VIEW --- */}
                 {viewMode === 'directory' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                            <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>Client & Pet Directory</Typography>
-                            <Chip label={`${clients.length} Clients`} size="small" />
-                        </Stack>
-
-                        <Stack spacing={2}>
-                            {loadingClients ? (
-                                <Box sx={{ py: 4, textAlign: 'center' }}>
-                                    <CircularProgress size={32} sx={{ color: '#D4AF37' }} />
-                                </Box>
-                            ) : clients.length === 0 ? (
-                                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                    <Typography color="#64748b">No clients or pets found.</Typography>
-                                </Paper>
-                            ) : sortedDirectoryClients.map((client, idx) => (
-                                <Paper key={idx} sx={{
-                                    p: 2,
-                                    borderRadius: 3,
-                                    bgcolor: (client.unread_messages_count > 0) ? 'rgba(212, 175, 55, 0.05)' : 'rgba(255,255,255,0.01)',
-                                    border: (client.unread_messages_count > 0) ? '1px solid rgba(212, 175, 55, 0.2)' : '1px solid rgba(255,255,255,0.05)',
-                                    transition: 'all 0.2s',
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
-                                }}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                                        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                                            <MuiBadge
-                                                badgeContent={client.pets?.length || 0}
-                                                color="error"
-                                                overlap="circular"
-                                                invisible={!(client.pets?.length)}
-                                            >
-                                                <Avatar
-                                                    src={client.pets?.[0]?.photo_url}
-                                                    sx={{
-                                                        bgcolor: (client.unread_messages_count > 0) ? '#D4AF37' : 'rgba(212, 175, 55, 0.1)',
-                                                        color: (client.unread_messages_count > 0) ? 'black' : '#D4AF37',
-                                                        width: 48,
-                                                        height: 48
-                                                    }}
-                                                >
-                                                    {client.email[0].toUpperCase()}
-                                                </Avatar>
-                                            </MuiBadge>
-
-                                            <Box sx={{ minWidth: 0, flex: 1 }}>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    color="white"
-                                                    noWrap
-                                                    sx={{
-                                                        fontSize: '1rem',
-                                                        textOverflow: 'ellipsis'
-                                                    }}
-                                                >
-                                                    {client.name || client.email}
-                                                </Typography>
-                                                <Typography variant="caption" color="#94a3b8" noWrap sx={{ display: 'block' }}>
-                                                    Pets: {client.pets?.length > 0 ? client.pets.map((p: any) => p.name).join(', ') : 'No pets registered'}
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-
-                                        <Stack direction="row" spacing={1}>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                onClick={() => {
-                                                    if (client.pets?.length > 0) {
-                                                        setSelectedClient(client);
-                                                        setShowPetModal(true);
-                                                    } else {
-                                                        setMessage({ text: "User has not added any pets", severity: "info", open: true });
-                                                    }
-                                                }}
-                                                sx={{ borderColor: 'rgba(255,255,255,0.1)', color: '#94a3b8', borderRadius: 2 }}
-                                            >
-                                                View Pets
-                                            </Button>
-                                            {(client.unread_messages_count > 0 || viewMode === 'directory') && (
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => { setActiveChat(client); setViewMode('comms'); fetchMessages(client.email); }}
-                                                    sx={{
-                                                        bgcolor: (client.unread_messages_count > 0) ? '#D4AF37' : 'rgba(255,255,255,0.05)',
-                                                        color: (client.unread_messages_count > 0) ? 'black' : '#D4AF37',
-                                                        '&:hover': { bgcolor: '#F5D061' }
-                                                    }}
-                                                >
-                                                    <ChatIcon fontSize="small" />
-                                                </IconButton>
-                                            )}
-                                        </Stack>
-                                    </Stack>
-                                </Paper>
-                            ))}
-                        </Stack>
-                    </motion.div>
+                    <ClientDirectory
+                        clients={sortedDirectoryClients}
+                        onViewPets={(c) => {
+                            setSelectedClient(c);
+                            setShowPetModal(true);
+                        }}
+                        onChat={(c) => {
+                            setActiveChat(c);
+                            setViewMode('comms');
+                            fetchMessages(c.email);
+                        }}
+                    />
                 )}
 
                 {/* --- COMMS VIEW --- */}
                 {viewMode === 'comms' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <Grid container spacing={0} sx={{ height: '70vh', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.01)' }}>
+                        <Box sx={{ height: '70vh', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
                             {/* Conversations List */}
-                            <Grid size={{ xs: 12, md: 4 }} sx={{ borderRight: '1px solid rgba(255,255,255,0.05)', display: { xs: activeChat ? 'none' : 'block', md: 'block' } }}>
+                            <Box sx={{ width: { xs: '100%', md: '33.33%' }, borderRight: '1px solid rgba(255,255,255,0.05)', display: { xs: activeChat ? 'none' : 'block', md: 'block' } }}>
                                 <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.02)' }}>
                                     <Typography variant="subtitle2" color="#94a3b8">Active Threads</Typography>
                                 </Box>
@@ -1112,10 +787,10 @@ export default function StaffDashboard() {
                                         </Box>
                                     ))}
                                 </Box>
-                            </Grid>
+                            </Box>
 
                             {/* Chat Window */}
-                            <Grid size={{ xs: 12, md: 8 }} sx={{ height: '100%', display: { xs: activeChat ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column' }}>
+                            <Box sx={{ width: { xs: '100%', md: '66.67%' }, height: '100%', display: { xs: activeChat ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column' }}>
                                 {activeChat ? (
                                     <>
                                         <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1125,7 +800,7 @@ export default function StaffDashboard() {
                                                 </IconButton>
                                                 <Typography variant="subtitle1" fontWeight="bold" color="#D4AF37">{activeChat.email}</Typography>
                                             </Stack>
-                                            <Message sx={{ color: '#D4AF37', opacity: 0.5 }} />
+                                            <MessageIcon sx={{ color: '#D4AF37', opacity: 0.5 }} />
                                         </Box>
 
                                         <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1176,13 +851,13 @@ export default function StaffDashboard() {
                                     </>
                                 ) : (
                                     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
-                                        <Message sx={{ fontSize: 64, mb: 2 }} />
+                                        <MessageIcon sx={{ fontSize: 64, mb: 2 }} />
                                         <Typography>Secure Comms Channel</Typography>
                                         <Typography variant="caption">Select a thread to begin</Typography>
                                     </Box>
                                 )}
-                            </Grid>
-                        </Grid>
+                            </Box>
+                        </Box>
                     </motion.div>
                 )}
 
@@ -1196,7 +871,7 @@ export default function StaffDashboard() {
                         {selectedClient?.pets?.map((pet: any, i: number) => (
                             <Box key={i} sx={{ mb: 4 }}>
                                 <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 3 }}>
-                                    <Avatar src={pet.photo_url} sx={{ width: 80, height: 80, border: '2px solid #D4AF37' }} />
+                                    <Avatar src={pet.image_url || pet.photo_url} sx={{ width: 80, height: 80, border: '2px solid #D4AF37' }} />
                                     <Box>
                                         <Typography variant="h5" color="white" fontWeight="bold">{pet.name}</Typography>
                                         <Typography color="#D4AF37">{pet.breed}</Typography>
@@ -1204,32 +879,32 @@ export default function StaffDashboard() {
                                     </Box>
                                 </Stack>
 
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 6 }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                                    <Box>
                                         <Paper sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
                                             <Typography variant="caption" color="#64748b" display="block">Age</Typography>
                                             <Typography color="white">{pet.age} Years</Typography>
                                         </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 6 }}>
+                                    </Box>
+                                    <Box>
                                         <Paper sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
                                             <Typography variant="caption" color="#64748b" display="block">Weight</Typography>
                                             <Typography color="white">{pet.weight} lbs</Typography>
                                         </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 12 }}>
+                                    </Box>
+                                    <Box sx={{ gridColumn: '1 / -1' }}>
                                         <Paper sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
                                             <Typography variant="caption" color="#64748b" display="block">Temperament</Typography>
                                             <Typography color="white">{pet.temperament}</Typography>
                                         </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 12 }}>
+                                    </Box>
+                                    <Box sx={{ gridColumn: '1 / -1' }}>
                                         <Paper sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
                                             <Typography variant="caption" color="#64748b" display="block">Medical Notes & Allergies</Typography>
                                             <Typography color="white">{pet.allergies || 'No known allergies'}</Typography>
                                         </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 12 }}>
+                                    </Box>
+                                    <Box sx={{ gridColumn: '1 / -1' }}>
                                         <Button
                                             fullWidth
                                             variant="contained"
@@ -1240,8 +915,8 @@ export default function StaffDashboard() {
                                         >
                                             Log Incident
                                         </Button>
-                                    </Grid>
-                                </Grid>
+                                    </Box>
+                                </Box>
                                 {i < (selectedClient.pets.length - 1) && <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.05)' }} />}
                             </Box>
                         ))}
@@ -1295,14 +970,14 @@ export default function StaffDashboard() {
                             Listing confirmed bookings for today only.
                         </Typography>
                         <Stack spacing={2} sx={{ mt: 2 }}>
-                            {pendingBookings.filter(b => b.status === 'confirmed' && new Date(b.start_date).toDateString() === new Date().toDateString()).length === 0 ? (
+                            {todaysArrivals.length === 0 ? (
                                 <Alert severity="info">No arrivals scheduled for today.</Alert>
-                            ) : pendingBookings.filter(b => b.status === 'confirmed' && new Date(b.start_date).toDateString() === new Date().toDateString()).map((arrival, i) => (
+                            ) : todaysArrivals.map((arrival, i) => (
                                 <Paper key={i} sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(0,0,0,0.05)' }}>
                                     <Stack direction="row" spacing={2} alignItems="center">
                                         <Avatar sx={{ bgcolor: '#3b82f6' }}>{arrival.user_email[0].toUpperCase()}</Avatar>
                                         <Box>
-                                            <Typography variant="body2" fontWeight="bold">{arrival.dog_id}</Typography>
+                                            <Typography variant="body2" fontWeight="bold">{arrival.dog_name || 'Dog'}</Typography>
                                             <Typography variant="caption" color="text.secondary">{arrival.service_type}</Typography>
                                         </Box>
                                     </Stack>
@@ -1316,159 +991,102 @@ export default function StaffDashboard() {
                     </DialogActions>
                 </Dialog>
 
-            </Container>
+                {/* Add Staff Modal */}
+                <Dialog open={openAddStaff} onClose={() => setOpenAddStaff(false)} PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}>
+                    <DialogTitle sx={{ color: 'white' }}>Add New Team Member</DialogTitle>
+                    <DialogContent>
+                        <Stack spacing={3} sx={{ mt: 1, minWidth: 300 }}>
+                            {formError && <Alert severity="error">{formError}</Alert>}
+                            {formSuccess && <Alert severity="success">{formSuccess}</Alert>}
 
-            {/* Add Staff Modal */}
-            <Dialog open={openAddStaff} onClose={() => setOpenAddStaff(false)} PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}>
-                <DialogTitle sx={{ color: 'white' }}>Add New Team Member</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1, minWidth: 300 }}>
-                        {formError && <Alert severity="error">{formError}</Alert>}
-                        {formSuccess && <Alert severity="success">{formSuccess}</Alert>}
-
-                        <TextField
-                            label="Full Name"
-                            fullWidth
-                            value={newStaff.name}
-                            onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-                        />
-                        <TextField
-                            label="Email Address"
-                            fullWidth
-                            value={newStaff.email}
-                            onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
-                        />
-                        <FormControl fullWidth>
-                            <InputLabel>Role</InputLabel>
-                            <Select
-                                value={newStaff.role}
-                                label="Role"
-                                onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-                            >
-                                <MenuItem value="staff">Staff (Operational)</MenuItem>
-                                <MenuItem value="owner">Owner (Admin Access)</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <TextField
-                            label="Password"
-                            type={showPassword ? "text" : "password"}
-                            fullWidth
-                            value={newStaff.password}
-                            onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                )
-                            }}
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 3 }}>
-                    <Button onClick={() => setOpenAddStaff(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleAddStaff}
-                        disabled={loadingStaff}
-                        sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' } }}
-                    >
-                        {loadingStaff ? <CircularProgress size={24} color="inherit" /> : "Create Account"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Owner Settings Modal */}
-            <Dialog
-                open={showSettingsDialog}
-                onClose={() => setShowSettingsDialog(false)}
-                PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, minWidth: 350 } }}
-            >
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'white' }}>
-                    <Settings /> Command Settings
-                </DialogTitle>
-                <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                            General system settings and profile management for the Operational Command.
-                        </Typography>
-
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            fullWidth
-                            onClick={() => {
-                                localStorage.removeItem('vanguard_token');
-                                window.location.href = '/';
-                            }}
-                        >
-                            Emergency Sign Out
-                        </Button>
-                    </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setShowSettingsDialog(false)} sx={{ color: 'text.secondary' }}>Close</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Incident/Care Alert Modal */}
-            <Dialog
-                open={showIncidentModal}
-                onClose={() => setShowIncidentModal(false)}
-                PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 3, minWidth: { xs: '90%', sm: 400 } } }}
-            >
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#ef4444' }}>
-                    <CrisisAlert /> Log Care Alert
-                </DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2.5} sx={{ mt: 1 }}>
-                        {selectedPet && (
-                            <Chip
-                                avatar={<Avatar sx={{ bgcolor: 'rgba(212, 175, 55, 0.2)', color: '#D4AF37' }}>{selectedPet.name?.[0]}</Avatar>}
-                                label={selectedPet.name}
-                                sx={{ alignSelf: 'flex-start', bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', border: '1px solid rgba(212, 175, 55, 0.2)' }}
+                            <TextField
+                                label="Full Name"
+                                fullWidth
+                                value={newStaff.name}
+                                onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
                             />
-                        )}
-                        <FormControl fullWidth variant="filled">
-                            <InputLabel sx={{ color: 'text.secondary' }}>Severity</InputLabel>
-                            <Select
-                                value={incidentSeverity}
-                                onChange={(e) => setIncidentSeverity(e.target.value)}
-                                sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}
-                            >
-                                <MenuItem value="Info">ℹ️ Info - General Note</MenuItem>
-                                <MenuItem value="Warning">⚠️ Warning - Minor Concern</MenuItem>
-                                <MenuItem value="Critical">🚨 Critical - Immediate Attention</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <TextField
-                            label="Alert Details"
-                            multiline
-                            rows={4}
-                            fullWidth
-                            variant="filled"
-                            placeholder="Describe the incident, behavior, or concern..."
-                            value={incidentText}
-                            onChange={(e) => setIncidentText(e.target.value)}
-                            sx={{ '& .MuiFilledInput-root': { bgcolor: 'rgba(255,255,255,0.03)' } }}
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setShowIncidentModal(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleLogIncident}
-                        disabled={!incidentText.trim()}
-                        sx={{ bgcolor: '#ef4444', '&:hover': { bgcolor: '#dc2626' } }}
-                    >
-                        Log Alert
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                            <TextField
+                                label="Email Address"
+                                fullWidth
+                                value={newStaff.email}
+                                onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                            />
+                            <FormControl fullWidth>
+                                <InputLabel>Role</InputLabel>
+                                <Select
+                                    value={newStaff.role}
+                                    label="Role"
+                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                >
+                                    <MenuItem value="staff">Staff (Operational)</MenuItem>
+                                    <MenuItem value="owner">Owner (Admin Access)</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <TextField
+                                label="Password"
+                                type={showPassword ? "text" : "password"}
+                                fullWidth
+                                value={newStaff.password}
+                                onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3 }}>
+                        <Button onClick={() => setOpenAddStaff(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleAddStaff}
+                            disabled={loadingStaff}
+                            sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' } }}
+                        >
+                            {loadingStaff ? <CircularProgress size={24} color="inherit" /> : "Create Account"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
 
+                {/* Owner Settings Modal */}
+                <Dialog
+                    open={showSettingsDialog}
+                    onClose={() => setShowSettingsDialog(false)}
+                    PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, minWidth: 350 } }}
+                >
+                    <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'white' }}>
+                        <Settings /> Command Settings
+                    </DialogTitle>
+                    <DialogContent>
+                        <Stack spacing={3} sx={{ mt: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                General system settings and profile management for the Operational Command.
+                            </Typography>
+
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                fullWidth
+                                onClick={() => {
+                                    localStorage.removeItem('vanguard_token');
+                                    window.location.href = '/';
+                                }}
+                            >
+                                Emergency Sign Out
+                            </Button>
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setShowSettingsDialog(false)} sx={{ color: 'text.secondary' }}>Close</Button>
+                    </DialogActions>
+                </Dialog>
+
+            </Container>
         </Box>
     );
 }

@@ -16,7 +16,7 @@ import {
     BottomNavigationAction,
     ThemeProvider,
     CssBaseline,
-    Grid,
+
     Collapse,
     Badge,
     Dialog,
@@ -47,6 +47,7 @@ import {
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/config";
+import { Booking, DailyReport, Notification } from "@/types";
 
 import { authenticatedFetch } from "@/lib/api";
 
@@ -55,14 +56,14 @@ export default function ClientDashboard() {
     const [userName, setUserName] = useState("Guest");
     const [navValue, setNavValue] = useState(0);
     const [balance, setBalance] = useState(0);
-    const [nextStay, setNextStay] = useState<any>(null);
+    const [nextStay, setNextStay] = useState<Booking | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showUpsell, setShowUpsell] = useState(false);
     const [dontShowAgain, setDontShowAgain] = useState(false);
     const [currentEmail, setCurrentEmail] = useState<string | null>(null);
 
-    const [latestReport, setLatestReport] = useState<any>(null);
+    const [latestReport, setLatestReport] = useState<DailyReport | null>(null);
 
     useEffect(() => {
         const storedName = typeof window !== 'undefined' ? localStorage.getItem('vanguard_user') : null;
@@ -92,14 +93,14 @@ export default function ClientDashboard() {
 
                 // Calculate Balance
                 const total = bookings
-                    .filter((b: any) => b.status?.toLowerCase() === "confirmed")
-                    .reduce((sum: number, b: any) => sum + b.total_price, 0);
+                    .filter((b: Booking) => b.status?.toLowerCase() === "confirmed")
+                    .reduce((sum: number, b: Booking) => sum + b.total_price, 0);
                 setBalance(total);
 
                 // Find next/current stay
                 const upcoming = bookings
-                    .filter((b: any) => b.status !== "Completed" && b.status !== "Cancelled")
-                    .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+                    .filter((b: Booking) => b.status !== "completed" && b.status !== "cancelled")
+                    .sort((a: Booking, b: Booking) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
                 if (upcoming.length > 0) {
                     setNextStay(upcoming[0]);
@@ -119,7 +120,7 @@ export default function ClientDashboard() {
             const notifRes = await authenticatedFetch(`/api/notifications`);
             if (notifRes.ok) {
                 const notifs = await notifRes.json();
-                setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
+                setUnreadCount(notifs.filter((n: Notification) => !n.is_read).length);
             }
         } catch (err) {
             console.error("Home fetch failed", err);
@@ -237,7 +238,7 @@ export default function ClientDashboard() {
                         </Box>
 
                         {/* 3. NEXT STAY QUICK VIEW */}
-                        {nextStay && nextStay.status === 'Confirmed' && (
+                        {nextStay && nextStay.status === 'confirmed' && (
                             <Paper sx={{
                                 p: 2.5,
                                 borderRadius: 4,
