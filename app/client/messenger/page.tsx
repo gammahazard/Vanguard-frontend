@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
     Box, Typography, Container, Stack, Paper, TextField, IconButton,
     Avatar, CircularProgress, ThemeProvider, CssBaseline, BottomNavigation,
@@ -25,6 +25,22 @@ export default function MessengerView() {
 
     const userEmail = typeof window !== 'undefined' ? localStorage.getItem('vanguard_email')?.toLowerCase() || "" : "";
     const staffEmail = "staff@vanguard.com".toLowerCase();
+
+    // Get staff info from messages
+    const staffInfo = useMemo(() => {
+        const staffMessages = messages.filter(m => m.sender_email.toLowerCase() !== userEmail.toLowerCase());
+        if (staffMessages.length === 0) return { name: "Staff Support", email: "staff@vanguard.com", isOnline: false };
+
+        const lastStaffMsg = staffMessages[staffMessages.length - 1];
+        const lastMsgTime = new Date(lastStaffMsg.timestamp).getTime();
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+        return {
+            name: lastStaffMsg.sender_name || "Staff Support",
+            email: lastStaffMsg.sender_email,
+            isOnline: lastMsgTime > fiveMinutesAgo
+        };
+    }, [messages, userEmail]);
 
     const fetchMessages = async () => {
         if (!userEmail) return;
@@ -99,10 +115,14 @@ export default function MessengerView() {
                         <IconButton onClick={() => router.back()} sx={{ color: 'white', mr: 2 }}>
                             <ArrowBack />
                         </IconButton>
-                        <Avatar sx={{ bgcolor: 'primary.main', color: 'black', mr: 2, fontWeight: 'bold' }}>S</Avatar>
-                        <Box>
-                            <Typography variant="subtitle1" fontWeight="bold">Staff Support</Typography>
-                            <Typography variant="caption" color="primary">Online</Typography>
+                        <Avatar sx={{ bgcolor: staffInfo.isOnline ? 'primary.main' : 'rgba(255,255,255,0.1)', color: staffInfo.isOnline ? 'black' : 'text.secondary', mr: 2, fontWeight: 'bold' }}>
+                            {staffInfo.name[0]?.toUpperCase() || 'S'}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="bold">{staffInfo.name}</Typography>
+                            <Typography variant="caption" sx={{ color: staffInfo.isOnline ? '#22c55e' : 'text.secondary' }}>
+                                {staffInfo.isOnline ? '● Online' : '○ Offline'}
+                            </Typography>
                         </Box>
                     </Toolbar>
                 </AppBar>
