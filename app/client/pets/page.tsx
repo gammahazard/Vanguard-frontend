@@ -365,15 +365,15 @@ function PetCard({ pet, onEdit, onDelete }: any) {
 
                     {/* BIOMETRIC GRID */}
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }} style={{ display: 'block' }}>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>AGE</Typography>
                             <Typography variant="body1" fontWeight="bold">{pet.age} YR</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }} style={{ display: 'block' }}>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>WEIGHT</Typography>
                             <Typography variant="body1" fontWeight="bold">{pet.weight} KG</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }} style={{ display: 'block' }}>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>CLASS</Typography>
                             <Typography variant="body1" fontWeight="bold" sx={{ color: 'primary.main' }}>VIP</Typography>
                         </Grid>

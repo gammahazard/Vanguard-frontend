@@ -365,8 +365,8 @@ export default function OwnerDashboard() {
                                 </Stack>
 
                                 <Grid container spacing={3}>
-                                    <Grid sx={{ gridColumn: 'span 12', gridColumnMd: 'span 6' }} style={{ display: 'block', gridColumn: 'span 12' }}>
-                                        {/* Using span directly for maximal compatibility if xs fails */}
+                                    <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'block' }}>
+                                        {/* Using standard size prop for MUI v6 */}
                                         <Box sx={{ width: '100%' }}>
                                             <Typography variant="caption" color="text.secondary" gutterBottom display="block">EST. MONTHLY PROFIT</Typography>
                                             <Typography variant="h4" fontWeight="bold" sx={{ color: (stats.revenue - overhead - (stats.staff_count * staffRate)) > 0 ? 'success.main' : 'error.main' }}>
@@ -375,7 +375,7 @@ export default function OwnerDashboard() {
                                             <Typography variant="caption" color="text.secondary">Real-time projection</Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid sx={{ gridColumn: 'span 12', gridColumnMd: 'span 6' }}>
+                                    <Grid size={{ xs: 12, md: 6 }}>
                                         <Stack spacing={2}>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Monthly Overhead ($)</Typography>
