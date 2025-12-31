@@ -124,10 +124,11 @@ export default function BookingsView() {
                 setFormData({ dog_ids: [], service_type: "Boarding", start_date: "", end_date: "", notes: "", total_price: 0 });
                 fetchData();
             } else {
-                setError(data.error || "Failed to create reservation.");
+                setError(data.error || `Error ${res.status}: Failed to create reservation.`);
             }
-        } catch (err) {
-            setError("Network error.");
+        } catch (err: any) {
+            console.error("Booking error:", err);
+            setError(err?.message || "Connection failed. Please check your internet.");
         } finally {
             setSubmitting(false);
         }
