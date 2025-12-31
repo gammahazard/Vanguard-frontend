@@ -390,7 +390,7 @@ export default function StaffDashboard() {
     const fetchMessages = async (targetEmail: string) => {
         try {
             const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/messages?target=${encodeURIComponent(targetEmail)}`, {
+            const res = await fetch(`${API_BASE_URL}/api/messages?email=${encodeURIComponent(targetEmail)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -429,8 +429,8 @@ export default function StaffDashboard() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
-                    sender_email: senderEmail,
-                    receiver_email: activeChat.email,
+                    sender: senderEmail,
+                    receiver: activeChat.email,
                     content: newMessage
                 })
             });
@@ -886,7 +886,7 @@ export default function StaffDashboard() {
                                                         textOverflow: 'ellipsis'
                                                     }}
                                                 >
-                                                    {client.email}
+                                                    {client.name || client.email}
                                                 </Typography>
                                                 <Typography variant="caption" color="#94a3b8" noWrap sx={{ display: 'block' }}>
                                                     Pets: {client.pets?.map((p: any) => p.name).join(', ') || 'None registered'}
@@ -951,7 +951,7 @@ export default function StaffDashboard() {
                                                     <Avatar sx={{ width: 40, height: 40, bgcolor: 'rgba(255,255,255,0.05)' }}>{client.email[0].toUpperCase()}</Avatar>
                                                 </MuiBadge>
                                                 <Box sx={{ minWidth: 0 }}>
-                                                    <Typography variant="body2" fontWeight="bold" noWrap color="white">{client.email}</Typography>
+                                                    <Typography variant="body2" fontWeight="bold" noWrap color="white">{client.name || client.email}</Typography>
                                                     <Typography variant="caption" color="#64748b" noWrap display="block">
                                                         {client.pets?.[0]?.name || 'Client'}
                                                     </Typography>
