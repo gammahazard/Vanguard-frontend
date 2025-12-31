@@ -287,7 +287,11 @@ export default function ClientDashboard() {
             {/* --- FACE ID UPSELL MODAL --- */}
             <Dialog
                 open={showUpsell}
-                onClose={() => {
+                onClose={(event, reason) => {
+                    // Prevent closing on backdrop click
+                    if (reason && reason === "backdropClick")
+                        return;
+
                     setShowUpsell(false);
                     if (dontShowAgain && currentEmail) {
                         localStorage.setItem(`vanguard_hide_upsell_${currentEmail}`, 'true');

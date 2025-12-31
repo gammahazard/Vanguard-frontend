@@ -152,25 +152,47 @@ export default function WalletView() {
                                 <List disablePadding>
                                     {cryptoAssets.map((coin, i) => (
                                         <div key={coin.name}>
-                                            <ListItem
-                                                secondaryAction={
-                                                    <Button size="small" variant="text" sx={{ color: '#D4AF37', fontWeight: 'bold' }} onClick={() => setSelectedCoin(coin)}>Deposit</Button>
-                                                }
-                                                sx={{ py: 2 }}
+                                            <Stack
+                                                direction={{ xs: 'column', sm: 'row' }}
+                                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                                justifyContent="space-between"
+                                                spacing={2}
+                                                sx={{ py: 2, px: 2 }}
                                             >
-                                                <ListItemAvatar>
+                                                {/* Asset Info */}
+                                                <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
                                                     <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                                                         {coin.icon}
                                                     </Avatar>
-                                                </ListItemAvatar>
-                                                <ListItemText
-                                                    primary={<Typography variant="body2" fontWeight="900">{coin.name}</Typography>}
-                                                    secondary={<Typography variant="caption" sx={{ opacity: 0.5 }}>{coin.full} • {coin.price}</Typography>}
-                                                />
-                                                <Box sx={{ textAlign: 'right', mr: 2 }}>
-                                                    <Typography variant="body2" fontWeight="bold">{coin.balance}</Typography>
-                                                </Box>
-                                            </ListItem>
+                                                    <Box>
+                                                        <Typography variant="body2" fontWeight="900">{coin.name}</Typography>
+                                                        <Typography variant="caption" sx={{ opacity: 0.5, display: 'block' }}>
+                                                            {coin.full} • {coin.price}
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+
+                                                {/* Balance & Action */}
+                                                <Stack direction="row" alignItems="center" spacing={3} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'space-between' }}>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="caption" color="text.secondary" display="block">Balance</Typography>
+                                                        <Typography variant="body2" fontWeight="bold">{coin.balance}</Typography>
+                                                    </Box>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        onClick={() => setSelectedCoin(coin)}
+                                                        sx={{
+                                                            color: '#D4AF37',
+                                                            borderColor: 'rgba(212, 175, 55, 0.3)',
+                                                            fontWeight: 'bold',
+                                                            minWidth: 90
+                                                        }}
+                                                    >
+                                                        Deposit
+                                                    </Button>
+                                                </Stack>
+                                            </Stack>
                                             {i < cryptoAssets.length - 1 && <Divider sx={{ opacity: 0.05 }} />}
                                         </div>
                                     ))}
