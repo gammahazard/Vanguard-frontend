@@ -55,6 +55,15 @@ const activeGuests = [
     { id: 6, name: "Daisy", breed: "Poodle", status: "Check-out", alerts: [], fed: true, walked: true, meds: null, img: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=300&q=80" },
 ];
 
+const MOCK_FINANCIALS = {
+    totalRevenue: "$124,500",
+    growth: "+12%",
+    occupancyRate: "92%",
+    adr: "$840",
+    chartData: [40, 65, 45, 80, 55, 90, 70], // Mon-Sun
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+};
+
 export default function StaffDashboard() {
     const [guests, setGuests] = useState(activeGuests);
     const [viewMode, setViewMode] = useState<'operations' | 'business'>('operations');
@@ -274,10 +283,10 @@ export default function StaffDashboard() {
                                     <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={4}>
                                         <Box>
                                             <Typography variant="overline" color="text.secondary">Total Revenue (Dec)</Typography>
-                                            <Typography variant="h3" fontWeight="bold" sx={{ color: '#D4AF37' }}>$124,500</Typography>
+                                            <Typography variant="h3" fontWeight="bold" sx={{ color: '#D4AF37' }}>{MOCK_FINANCIALS.totalRevenue}</Typography>
                                             <Stack direction="row" spacing={1} alignItems="center" mt={1}>
                                                 <TrendingUp sx={{ color: '#22c55e', fontSize: 18 }} />
-                                                <Typography variant="body2" sx={{ color: '#22c55e' }}>+12% vs last month</Typography>
+                                                <Typography variant="body2" sx={{ color: '#22c55e' }}>{MOCK_FINANCIALS.growth} vs last month</Typography>
                                             </Stack>
                                         </Box>
                                         <Box sx={{ textAlign: 'right' }}>
@@ -287,14 +296,14 @@ export default function StaffDashboard() {
 
                                     {/* Bar Chart Visualization */}
                                     <Stack direction="row" alignItems="flex-end" justifyContent="space-between" sx={{ height: 200, px: 2 }}>
-                                        {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                                        {MOCK_FINANCIALS.chartData.map((h, i) => (
                                             <Box key={i} sx={{ width: '8%', height: `${h}%`, bgcolor: i === 5 ? '#D4AF37' : 'rgba(255,255,255,0.05)', borderRadius: '4px 4px 0 0', transition: 'height 1s ease', position: 'relative', '&:hover': { bgcolor: i === 5 ? '#F5D061' : 'rgba(255,255,255,0.1)' } }}>
                                                 {i === 5 && <Box sx={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', bgcolor: '#D4AF37', color: 'black', fontSize: 10, px: 1, py: 0.5, borderRadius: 1, fontWeight: 'bold' }}>Record</Box>}
                                             </Box>
                                         ))}
                                     </Stack>
                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, px: 2 }}>
-                                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                                        {MOCK_FINANCIALS.days.map(d => (
                                             <Typography key={d} variant="caption" color="text.secondary">{d}</Typography>
                                         ))}
                                     </Stack>
@@ -305,7 +314,7 @@ export default function StaffDashboard() {
                                         <Stack direction="row" spacing={2} alignItems="center" mb={2}>
                                             <Avatar sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><People /></Avatar>
                                             <Box>
-                                                <Typography variant="h5" fontWeight="bold">92%</Typography>
+                                                <Typography variant="h5" fontWeight="bold">{MOCK_FINANCIALS.occupancyRate}</Typography>
                                                 <Typography variant="caption" color="text.secondary">Occupancy Rate</Typography>
                                             </Box>
                                         </Stack>
@@ -317,7 +326,7 @@ export default function StaffDashboard() {
                                         <Stack direction="row" spacing={2} alignItems="center" mb={2}>
                                             <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><AttachMoney /></Avatar>
                                             <Box>
-                                                <Typography variant="h5" fontWeight="bold">$840</Typography>
+                                                <Typography variant="h5" fontWeight="bold">{MOCK_FINANCIALS.adr}</Typography>
                                                 <Typography variant="caption" color="text.secondary">Avg. Daily Rate</Typography>
                                             </Box>
                                         </Stack>

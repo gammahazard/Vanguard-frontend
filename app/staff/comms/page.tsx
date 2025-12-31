@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Paper, Stack, Container, TextField, InputAdornment, Chip, Avatar, Tooltip, IconButton, Divider, CircularProgress } from "@mui/material";
+import { Box, Typography, Paper, Stack, Container, TextField, InputAdornment, Chip, Avatar, Tooltip, IconButton, Divider, CircularProgress, Button, Snackbar } from "@mui/material";
 import {
     Search,
     FilterList,
@@ -26,6 +26,8 @@ export default function StaffCommsLog() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<'all' | 'staff' | 'client'>('all');
+
+    const [snackbar, setSnackbar] = useState<{ open: boolean, message: string }>({ open: false, message: "" });
 
     useEffect(() => {
         fetchMessages();
@@ -56,6 +58,11 @@ export default function StaffCommsLog() {
         return { label: 'CLIENT', color: '#10b981', bgcolor: 'rgba(16, 185, 129, 0.1)' };
     };
 
+    const handleCopyEmail = (email: string) => {
+        navigator.clipboard.writeText(email);
+        setSnackbar({ open: true, message: `Copied ${email} to clipboard` });
+    };
+
     const filteredMessages = messages.filter(msg => {
         const matchesSearch =
             msg.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,8 +71,11 @@ export default function StaffCommsLog() {
 
         if (!matchesSearch) return false;
 
-        if (filter === 'staff') return msg.sender_email.includes('vanguard') || msg.receiver_email.includes('vanguard');
-        if (filter === 'client') return !msg.sender_email.includes('vanguard') || !msg.receiver_email.includes('vanguard'); // Rough approximation
+        const isSenderStaff = msg.sender_email.includes('vanguard') || msg.sender_email.includes('admin') || msg.sender_email.includes('owner');
+        const isReceiverStaff = msg.receiver_email.includes('vanguard') || msg.receiver_email.includes('admin') || msg.receiver_email.includes('owner');
+
+        if (filter === 'staff') return isSenderStaff && isReceiverStaff; // Internal comms
+        if (filter === 'client') return !isSenderStaff || !isReceiverStaff; // Involves a client
 
         return true;
     });
@@ -100,7 +110,7 @@ export default function StaffCommsLog() {
 
                 {/* Filter Bar */}
                 <Paper sx={{ p: 2, mb: 4, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction="row" spacing={2} alignItems="center">
                         <TextField
                             fullWidth
                             placeholder="Search by name, email, or content..."
@@ -112,9 +122,32 @@ export default function StaffCommsLog() {
                             }}
                             size="small"
                         />
-                        <IconButton>
-                            <FilterList sx={{ color: 'text.secondary' }} />
-                        </IconButton>
+                        <Stack direction="row" spacing={1}>
+                            <Button
+                                variant={filter === 'all' ? 'contained' : 'outlined'}
+                                onClick={() => setFilter('all')}
+                                size="small"
+                                sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.1)', color: filter === 'all' ? 'black' : 'text.secondary', bgcolor: filter === 'all' ? 'white' : 'transparent' }}
+                            >
+                                All
+                            </Button>
+                            <Button
+                                variant={filter === 'client' ? 'contained' : 'outlined'}
+                                onClick={() => setFilter('client')}
+                                size="small"
+                                sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.1)', color: filter === 'client' ? 'black' : 'text.secondary', bgcolor: filter === 'client' ? '#10b981' : 'transparent', '&:hover': { bgcolor: filter === 'client' ? '#10b981' : 'rgba(16, 185, 129, 0.1)' } }}
+                            >
+                                Client Comms
+                            </Button>
+                            <Button
+                                variant={filter === 'staff' ? 'contained' : 'outlined'}
+                                onClick={() => setFilter('staff')}
+                                size="small"
+                                sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.1)', color: filter === 'staff' ? 'white' : 'text.secondary', bgcolor: filter === 'staff' ? '#3b82f6' : 'transparent', '&:hover': { bgcolor: filter === 'staff' ? '#3b82f6' : 'rgba(59, 130, 246, 0.1)' } }}
+                            >
+                                Internal
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Paper>
 
@@ -156,19 +189,35 @@ export default function StaffCommsLog() {
 
                                                 {/* Actors Column */}
                                                 <Box sx={{ minWidth: 200 }}>
-                                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                                        <Chip label={senderBadge.label} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: senderBadge.bgcolor, color: senderBadge.color, fontWeight: 'bold' }} />
-                                                        <Typography variant="caption" fontWeight="bold" color="text.primary">
-                                                            {msg.sender_email.split('@')[0]}
-                                                        </Typography>
-                                                    </Stack>
+                                                    <Tooltip title="Click to copy email">
+                                                        <Stack
+                                                            direction="row"
+                                                            spacing={1}
+                                                            alignItems="center"
+                                                            sx={{ mb: 1, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                            onClick={() => handleCopyEmail(msg.sender_email)}
+                                                        >
+                                                            <Chip label={senderBadge.label} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: senderBadge.bgcolor, color: senderBadge.color, fontWeight: 'bold' }} />
+                                                            <Typography variant="caption" fontWeight="bold" color="text.primary">
+                                                                {msg.sender_email.split('@')[0]}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Tooltip>
                                                     <ArrowForward sx={{ fontSize: 14, color: 'text.disabled', my: 0.5, transform: 'rotate(90deg)' }} />
-                                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                                                        <Chip label={receiverBadge.label} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: receiverBadge.bgcolor, color: receiverBadge.color, fontWeight: 'bold' }} />
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {msg.receiver_email.split('@')[0]}
-                                                        </Typography>
-                                                    </Stack>
+                                                    <Tooltip title="Click to copy email">
+                                                        <Stack
+                                                            direction="row"
+                                                            spacing={1}
+                                                            alignItems="center"
+                                                            sx={{ mt: 1, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                            onClick={() => handleCopyEmail(msg.receiver_email)}
+                                                        >
+                                                            <Chip label={receiverBadge.label} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: receiverBadge.bgcolor, color: receiverBadge.color, fontWeight: 'bold' }} />
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {msg.receiver_email.split('@')[0]}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Tooltip>
                                                 </Box>
 
                                                 {/* Content Column */}
@@ -188,6 +237,14 @@ export default function StaffCommsLog() {
                         </AnimatePresence>
                     )}
                 </Stack>
+
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={2000}
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    message={snackbar.message}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                />
 
             </Container>
         </Box>

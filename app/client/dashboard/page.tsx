@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
     Box,
     Typography,
@@ -484,9 +485,10 @@ function CamCard({ name }: { name: string }) {
             borderRadius: 4,
             border: '1px solid rgba(255,255,255,0.1)',
             aspectRatio: '16/9',
-            bgcolor: '#000',
+            bgcolor: '#0f172a',
             flexShrink: 0
         }}>
+            {/* Status Overlay */}
             <Box sx={{
                 position: 'absolute',
                 top: 12,
@@ -495,19 +497,40 @@ function CamCard({ name }: { name: string }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                bgcolor: 'rgba(212, 175, 55, 0.9)',
+                bgcolor: 'rgba(0, 0, 0, 0.6)',
                 px: 1.2,
                 py: 0.4,
                 borderRadius: 1,
-                backdropFilter: 'blur(4px)'
+                backdropFilter: 'blur(4px)',
+                border: '1px solid rgba(255,255,255,0.1)'
             }}>
-                <Typography variant="caption" fontWeight="bold" color="black" sx={{ fontSize: '0.65rem' }}>COMING SOON</Typography>
+                <Box sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    bgcolor: '#ef4444',
+                    boxShadow: '0 0 8px #ef4444'
+                }} />
+                <Typography variant="caption" fontWeight="bold" sx={{ color: '#ef4444', fontSize: '0.65rem', letterSpacing: 1 }}>OFFLINE</Typography>
             </Box>
 
-            <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
-                <Videocam sx={{ fontSize: 48 }} />
+            {/* Main Visual */}
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                <Videocam sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="caption" fontFamily="monospace" color="text.secondary">NO SIGNAL</Typography>
             </Box>
 
+            {/* Scanline Effect (CSS Mock) */}
+            <Box sx={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 50%)',
+                backgroundSize: '100% 4px',
+                opacity: 0.2,
+                pointerEvents: 'none'
+            }} />
+
+            {/* Footer Name */}
             <Box sx={{
                 position: 'absolute',
                 bottom: 0,
@@ -516,7 +539,10 @@ function CamCard({ name }: { name: string }) {
                 p: 2,
                 background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)'
             }}>
-                <Typography variant="caption" sx={{ fontWeight: 500, opacity: 0.8 }}>{name}</Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" sx={{ fontWeight: 500, opacity: 0.9 }}>{name}</Typography>
+                    <Typography variant="caption" fontFamily="monospace" sx={{ opacity: 0.5, fontSize: '0.6rem' }}>CAM-{Math.floor(Math.random() * 99)}</Typography>
+                </Stack>
             </Box>
         </Paper>
     );
