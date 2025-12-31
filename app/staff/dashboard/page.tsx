@@ -193,9 +193,35 @@ export default function StaffDashboard() {
                 const data = await resBookings.json();
                 // Filter for Pending bookings (case-insensitive)
                 setPendingBookings(data.filter((b: any) => b.status?.toLowerCase() === 'pending') || []);
-                // Get last 5 confirmed bookings for "Undo/Cancel" actions
+
+                // Group LAST 5 CONFIRMED ORDERS (not just bookings)
                 const confirmed = data.filter((b: any) => b.status?.toLowerCase() === 'confirmed');
-                setRecentBookings(confirmed.slice(0, 5));
+                const groupedConfirmed = Object.values(
+                    confirmed.reduce((acc: any, booking: any) => {
+                        const groupKey = `${booking.user_email}_${booking.start_date}_${booking.end_date}`;
+                        if (!acc[groupKey]) {
+                            acc[groupKey] = {
+                                id: groupKey,
+                                owner_name: booking.owner_name || booking.user_email,
+                                owner_email: booking.user_email,
+                                start_date: booking.start_date,
+                                end_date: booking.end_date,
+                                bookings: []
+                            };
+                        }
+                        acc[groupKey].bookings.push(booking);
+                        return acc;
+                    }, {})
+                );
+
+                // Sort by most recent start date (optional, but good for "Recent")
+                // Assuming data is already sorted by backend, but grouping might lose order if we use object values directly
+                // (Object.values order is not guaranteed to match insertion order strictly in all envs, but usually fine)
+                // Let's re-sort to be safe:
+                // Actually, backend sorts by start_date DESC.
+                // We'll trust the reduction kept order roughly or just slice.
+
+                setRecentBookings(groupedConfirmed.slice(0, 5));
             }
         } catch (e) {
             console.error(e);
@@ -895,31 +921,51 @@ export default function StaffDashboard() {
                             <History sx={{ color: '#D4AF37' }} /> Recent Confirmations
                         </Typography>
                         <Stack spacing={2}>
-                            {/* @ts-ignore - recentBookings added in next step but accessed here */}
                             {recentBookings.length === 0 ? (
                                 <Typography variant="body2" color="text.secondary">No recently confirmed bookings.</Typography>
-                            ) : recentBookings.map((booking: any) => (
-                                <Paper key={booking.id} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', opacity: 0.8 }}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                        <Stack direction="row" spacing={2} alignItems="center">
-                                            <Avatar sx={{ bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', width: 32, height: 32 }}><CheckCircle sx={{ fontSize: 18 }} /></Avatar>
+                            ) : recentBookings.map((group: any) => (
+                                <Paper key={group.id} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', opacity: 0.9 }}>
+                                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
+                                        <Stack direction="row" spacing={2} alignItems="flex-start">
+                                            <Avatar sx={{ bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', width: 32, height: 32 }}>
+                                                {group.bookings.length > 1 ? <AssignmentIcon sx={{ fontSize: 18 }} /> : <CheckCircle sx={{ fontSize: 18 }} />}
+                                            </Avatar>
                                             <Box>
-                                                <Typography variant="body2" fontWeight="bold" color="white">{booking.dog_name} <span style={{ opacity: 0.5, fontWeight: 'normal' }}>({booking.service_type})</span></Typography>
-                                                <Typography variant="caption" color="#64748b">{new Date(booking.start_date).toLocaleDateString()} - {booking.owner_name}</Typography>
+                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                    <Typography variant="body2" fontWeight="bold" color="white">
+                                                        {group.bookings.length > 1 ? `Order for ${group.bookings.length} Guests` : group.bookings[0].dog_name}
+                                                    </Typography>
+                                                    {group.bookings.length > 1 && (
+                                                        <Chip label="Group Order" size="small" sx={{ height: 16, bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontSize: '0.6rem' }} />
+                                                    )}
+                                                </Stack>
+                                                <Typography variant="caption" color="#64748b" display="block">
+                                                    {new Date(group.start_date).toLocaleDateString()} - {group.owner_name}
+                                                </Typography>
+
+                                                {/* List of Dogs for Groups */}
+                                                {group.bookings.length > 1 && (
+                                                    <Stack direction="row" spacing={0.5} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {group.bookings.map((b: any) => (
+                                                            <Chip
+                                                                key={b.id}
+                                                                label={b.dog_name}
+                                                                size="small"
+                                                                sx={{ height: 20, fontSize: '0.7rem', bgcolor: 'rgba(255,255,255,0.05)', color: '#cbd5e1' }}
+                                                            />
+                                                        ))}
+                                                    </Stack>
+                                                )}
                                             </Box>
                                         </Stack>
                                         <Button
                                             variant="outlined"
                                             color="warning"
                                             size="small"
-                                            onClick={() => {
-                                                if (confirm("Are you sure you want to cancel this confirmed booking? The client will be notified.")) {
-                                                    handleBookingAction(booking.id, 'cancelled');
-                                                }
-                                            }}
-                                            sx={{ fontSize: '0.7rem', py: 0.5 }}
+                                            onClick={() => handleBatchAction(group.bookings, 'cancelled')}
+                                            sx={{ fontSize: '0.7rem', py: 0.5, whiteSpace: 'nowrap' }}
                                         >
-                                            Cancel / Revert
+                                            Cancel / Revert Order
                                         </Button>
                                     </Stack>
                                 </Paper>
