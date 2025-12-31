@@ -51,7 +51,7 @@ export default function OfflinePage() {
                     </Typography>
 
                     <Typography variant="body1" sx={{ color: "text.secondary", mb: 4 }}>
-                        It looks like you've lost internet connection. Check your signal or wifi.
+                        It looks like you&apos;ve lost internet connection. Check your signal or wifi.
                     </Typography>
 
                     <Button
