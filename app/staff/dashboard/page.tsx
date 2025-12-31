@@ -239,7 +239,8 @@ export default function StaffDashboard() {
 
         try {
             const token = localStorage.getItem('vanguard_token');
-            const res = await fetch(`${API_BASE_URL}/api/users`, {
+            const url = `${API_BASE_URL}/api/users`;
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -255,10 +256,10 @@ export default function StaffDashboard() {
                 setTimeout(() => setOpenAddStaff(false), 1500);
             } else {
                 const text = await res.text();
-                setFormError(text || "Failed to add employee");
+                setFormError(`[${res.status}] ${text || "Failed to add employee"}`);
             }
-        } catch (e) {
-            setFormError("Network error");
+        } catch (e: any) {
+            setFormError(`Network error: ${e.message}`);
         } finally {
             setLoadingStaff(false);
         }
