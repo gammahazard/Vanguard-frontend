@@ -169,6 +169,7 @@ export default function StaffDashboard() {
     }, []);
 
     // Periodic Refresh for Comms/Directory
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         const interval = setInterval(() => {
             fetchClients();
@@ -582,6 +583,8 @@ export default function StaffDashboard() {
                                                 <Tooltip title="Daily Walk"><IconButton onClick={() => toggleAction(guest.id, 'walked')} sx={{ color: guest.walked ? '#3b82f6' : 'text.disabled', bgcolor: guest.walked ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}><DirectionsWalk fontSize="small" /></IconButton></Tooltip>
                                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                                                 <Tooltip title="Medication"><IconButton onClick={() => guest.meds !== null && toggleAction(guest.id, 'meds')} disabled={guest.meds === null} sx={{ color: guest.meds ? '#a855f7' : (guest.meds === null ? 'rgba(255,255,255,0.05)' : 'text.disabled'), bgcolor: guest.meds ? 'rgba(168, 85, 247, 0.1)' : 'transparent' }}><Medication fontSize="small" /></IconButton></Tooltip>
+                                                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                                                <Tooltip title="Log Care Alert"><IconButton onClick={() => { setSelectedPet(guest); setShowIncidentModal(true); }} sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><CrisisAlert fontSize="small" /></IconButton></Tooltip>
                                             </Stack>
                                         </Box>
                                     </Paper>
@@ -1213,6 +1216,62 @@ export default function StaffDashboard() {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setShowSettingsDialog(false)} sx={{ color: 'text.secondary' }}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Incident/Care Alert Modal */}
+            <Dialog
+                open={showIncidentModal}
+                onClose={() => setShowIncidentModal(false)}
+                PaperProps={{ sx: { bgcolor: '#1e293b', backgroundImage: 'none', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 3, minWidth: { xs: '90%', sm: 400 } } }}
+            >
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#ef4444' }}>
+                    <CrisisAlert /> Log Care Alert
+                </DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2.5} sx={{ mt: 1 }}>
+                        {selectedPet && (
+                            <Chip
+                                avatar={<Avatar sx={{ bgcolor: 'rgba(212, 175, 55, 0.2)', color: '#D4AF37' }}>{selectedPet.name?.[0]}</Avatar>}
+                                label={selectedPet.name}
+                                sx={{ alignSelf: 'flex-start', bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', border: '1px solid rgba(212, 175, 55, 0.2)' }}
+                            />
+                        )}
+                        <FormControl fullWidth variant="filled">
+                            <InputLabel sx={{ color: 'text.secondary' }}>Severity</InputLabel>
+                            <Select
+                                value={incidentSeverity}
+                                onChange={(e) => setIncidentSeverity(e.target.value)}
+                                sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}
+                            >
+                                <MenuItem value="Info">ℹ️ Info - General Note</MenuItem>
+                                <MenuItem value="Warning">⚠️ Warning - Minor Concern</MenuItem>
+                                <MenuItem value="Critical">🚨 Critical - Immediate Attention</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Alert Details"
+                            multiline
+                            rows={4}
+                            fullWidth
+                            variant="filled"
+                            placeholder="Describe the incident, behavior, or concern..."
+                            value={incidentText}
+                            onChange={(e) => setIncidentText(e.target.value)}
+                            sx={{ '& .MuiFilledInput-root': { bgcolor: 'rgba(255,255,255,0.03)' } }}
+                        />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setShowIncidentModal(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleLogIncident}
+                        disabled={!incidentText.trim()}
+                        sx={{ bgcolor: '#ef4444', '&:hover': { bgcolor: '#dc2626' } }}
+                    >
+                        Log Alert
+                    </Button>
                 </DialogActions>
             </Dialog>
 

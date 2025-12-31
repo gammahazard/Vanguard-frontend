@@ -8,8 +8,7 @@ export const sanitizeInput = (val: string, maxLength: number = 255): string => {
 
     return val
         .substring(0, maxLength)
-        .replace(/[<>]/g, "") // Strip HTML-like tags
-        .trim();
+        .replace(/[<>]/g, ""); // Strip HTML-like tags only, preserve spaces for typing
 };
 
 export const sanitizePhone = (val: string): string => {
