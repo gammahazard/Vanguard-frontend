@@ -130,6 +130,7 @@ export default function StaffDashboard() {
     const [selectedPet, setSelectedPet] = useState<Pet | GuestPet | null>(null);
     const [incidentText, setIncidentText] = useState("");
     const [incidentSeverity, setIncidentSeverity] = useState("Warning");
+    const [incidentTargetId, setIncidentTargetId] = useState<string>("general");
 
     // Messaging States
     const [activeChat, setActiveChat] = useState<UserWithPets | null>(null);
@@ -321,14 +322,14 @@ export default function StaffDashboard() {
     };
 
     const handleLogIncident = async () => {
-        if (!incidentText.trim() || !selectedPet) return;
+        if (!incidentText.trim()) return;
         try {
             await authenticatedFetch(`${API_BASE_URL}/api/incidents`, {
                 method: 'POST',
                 body: JSON.stringify({
                     id: Math.random().toString(36).substr(2, 9),
                     booking_id: "ops_log",
-                    pet_id: selectedPet.id,
+                    pet_id: selectedPet?.id || incidentTargetId,
                     content: incidentText,
                     severity: incidentSeverity
                 })
@@ -550,7 +551,7 @@ export default function StaffDashboard() {
                                     variant="outlined"
                                     color="warning"
                                     startIcon={<Warning />}
-                                    onClick={() => setShowIncidentModal(true)}
+                                    onClick={() => { setSelectedPet(null); setIncidentTargetId("general"); setShowIncidentModal(true); }}
                                     sx={{ borderColor: 'rgba(234, 179, 8, 0.5)', color: '#eab308', flex: { xs: 1, sm: 'none' } }}
                                 >
                                     Incident
@@ -961,6 +962,22 @@ export default function StaffDashboard() {
                             <Typography variant="body2" color="text.secondary">
                                 This will add a persistent alert to this VIP&apos;s operational card until resolved.
                             </Typography>
+
+                            {!selectedPet && (
+                                <FormControl fullWidth>
+                                    <InputLabel>Target VIP</InputLabel>
+                                    <Select
+                                        value={incidentTargetId}
+                                        onChange={(e) => setIncidentTargetId(e.target.value)}
+                                        label="Target VIP"
+                                    >
+                                        <MenuItem value="general">General Operation (No Specific VIP)</MenuItem>
+                                        {guests.map(g => (
+                                            <MenuItem key={g.id} value={g.id}>{g.name} ({g.breed})</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            )}
                             <FormControl fullWidth>
                                 <InputLabel>Severity</InputLabel>
                                 <Select
