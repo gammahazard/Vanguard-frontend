@@ -9,7 +9,7 @@ import {
     MenuItem, CircularProgress, Snackbar, Alert, Avatar, IconButton,
     Grid, Skeleton
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, Add, AccessTime, CheckCircle, Close, Dangerous, Chat, Warning, Info } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, Add, AccessTime, CheckCircle, Close, Dangerous, Chat, Warning, Info, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/config";
@@ -132,6 +132,7 @@ export default function BookingsView() {
             if (res.ok) {
                 // SIMULATION: Log Capital Transaction if used
                 if (useCapital) {
+                    // simulate capital payment transaction
                     const tx = {
                         id: `tx_${Date.now()}`,
                         date: new Date().toISOString(),
@@ -214,6 +215,7 @@ export default function BookingsView() {
         if (!start || !end) return false;
         const s = new Date(start);
         const e = new Date(end);
+        // keep stays under 30 days for insurance/capacity reasons
         const diff = Math.ceil(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         return diff > 30;
     };
@@ -316,7 +318,7 @@ export default function BookingsView() {
                             ))}
                         </Stepper>
                     </DialogTitle>
-                    <DialogContent sx={{ minHeight: 300, px: 3 }}>
+                    <DialogContent sx={{ minHeight: 450, px: 3 }}>
                         {activeStep === 0 && (
                             <Stack spacing={1.5} sx={{ mt: 2 }}>
                                 {pets.map(pet => {
@@ -338,64 +340,34 @@ export default function BookingsView() {
                         )}
                         {activeStep === 1 && (
                             <Stack spacing={3} sx={{ py: 2 }}>
-                                <TextField select label="Service" fullWidth value={formData.service_type} onChange={e => setFormData({ ...formData, service_type: e.target.value })} variant="filled">
+                                <TextField select label="Service" fullWidth value={formData.service_type} onChange={e => {
+                                    const val = e.target.value;
+                                    setFormData({ ...formData, service_type: val, end_date: val === 'Daycare' ? formData.start_date : formData.end_date });
+                                }} variant="filled">
                                     <MenuItem value="Boarding">Boarding</MenuItem>
                                     <MenuItem value="Daycare">Daycare</MenuItem>
                                 </TextField>
-                                <Stack direction="row" spacing={2}>
-                                    <TextField
-                                        label="Check-in"
-                                        type="date"
-                                        fullWidth
-                                        InputLabelProps={{ shrink: true }}
-                                        inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                                        value={formData.start_date}
-                                        onChange={e => {
-                                            const newStart = e.target.value;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                start_date: newStart,
-                                                // If Daycare, lock End Date to Start Date. Otherwise, clear if invalid.
-                                                end_date: prev.service_type === 'Daycare' ? newStart : (prev.end_date && prev.end_date < newStart ? '' : prev.end_date)
-                                            }));
-                                        }}
-                                        variant="filled"
-                                        error={isDateFull(formData.start_date)}
-                                        helperText={isDateFull(formData.start_date) ? "Fully booked" : ""}
+
+                                <Box sx={{ mt: 1 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <CalendarMonth fontSize="small" />
+                                        {formData.service_type === 'Daycare' ? 'Select Date' : 'Select Stay Period'}
+                                    </Typography>
+                                    <AvailabilityCalendar
+                                        startDate={formData.start_date}
+                                        endDate={formData.end_date}
+                                        availability={availability}
+                                        serviceType={formData.service_type}
+                                        onChange={(start: string, end: string) => setFormData(prev => ({ ...prev, start_date: start, end_date: end }))}
                                     />
-                                    <TextField
-                                        label="Check-out"
-                                        type="date"
-                                        fullWidth
-                                        disabled={formData.service_type === 'Daycare'}
-                                        InputLabelProps={{ shrink: true }}
-                                        inputProps={{
-                                            min: formData.start_date || new Date().toISOString().split('T')[0],
-                                            max: formData.start_date ? new Date(new Date(formData.start_date).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined
-                                        }}
-                                        value={formData.end_date}
-                                        onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                                        variant="filled"
-                                        error={isDateFull(formData.end_date) || (formData.service_type !== 'Daycare' && Boolean(formData.start_date && formData.end_date && formData.end_date <= formData.start_date))}
-                                        helperText={
-                                            formData.service_type === 'Daycare'
-                                                ? "Daycare is a single-day event"
-                                                : (formData.start_date && formData.end_date && formData.end_date <= formData.start_date
-                                                    ? "Overnight stay required"
-                                                    : isDateFull(formData.end_date) ? "Fully booked" : undefined)
-                                        }
-                                    />
-                                </Stack>
-                                {isRangeFull(formData.start_date, formData.end_date) && (
-                                    <Alert severity="error" sx={{ bgcolor: 'rgba(211, 47, 47, 0.1)', color: '#ff1744', border: '1px solid rgba(211, 47, 47, 0.2)' }}>
-                                        One or more days in this range are fully booked.
-                                    </Alert>
-                                )}
+                                </Box>
+
                                 {isStayTooLong(formData.start_date, formData.end_date) && (
                                     <Alert severity="warning" sx={{ bgcolor: 'rgba(255, 152, 0, 0.1)', color: '#ff9800', border: '1px solid rgba(255, 152, 0, 0.2)' }}>
                                         Maximum stay is 30 days. For longer periods, please contact us.
                                     </Alert>
                                 )}
+
                                 <TextField
                                     label="Stay Notes"
                                     fullWidth
@@ -503,6 +475,157 @@ export default function BookingsView() {
                 </Paper>
             </Box>
         </ThemeProvider >
+    );
+}
+
+
+function AvailabilityCalendar({ startDate, endDate, availability, serviceType, onChange }: any) {
+    // custom inline calendar for premium ux. replaces clunky native pickers.
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    // Helper to get days in month
+    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+    const daysInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+    const firstDay = getFirstDayOfMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const handleDateClick = (day: number) => {
+        const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        const dateStr = selected.toISOString().split('T')[0];
+
+        if (serviceType === 'Daycare') {
+            onChange(dateStr, dateStr);
+            return;
+        }
+
+        if (!startDate || (startDate && endDate)) {
+            // start fresh or reset range
+            onChange(dateStr, "");
+        } else {
+            // selecting end date for a range
+            const start = new Date(startDate);
+            if (selected < start) {
+                // if earlier, flip it to new start
+                onChange(dateStr, "");
+            } else {
+                // valid check-out selected
+                onChange(startDate, dateStr);
+            }
+        }
+    };
+
+    const isSelected = (day: number) => {
+        const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        const dStr = d.toISOString().split('T')[0];
+        if (serviceType === 'Daycare') return startDate === dStr;
+        if (startDate === dStr || endDate === dStr) return true;
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            return d > start && d < end;
+        }
+        return false;
+    };
+
+    const isBooked = (day: number) => {
+        const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        return availability.includes(d.toISOString().split('T')[0]);
+    };
+
+    const isPast = (day: number) => {
+        const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        return d < today;
+    };
+
+    const isTooFar = (day: number) => {
+        // limit stay selection grid based on 30 day max
+        if (!startDate || endDate || serviceType === 'Daycare') return false;
+        const start = new Date(startDate);
+        const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        const diff = Math.ceil(Math.abs(d.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return diff > 30;
+    };
+
+    return (
+        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <IconButton size="small" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}><ChevronLeft /></IconButton>
+                <Typography variant="body2" fontWeight="bold">
+                    {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </Typography>
+                <IconButton size="small" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))}><ChevronRight /></IconButton>
+            </Stack>
+
+            {/* Header days */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', mb: 1 }}>
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                    <Typography key={d} variant="caption" sx={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 'bold' }}>{d}</Typography>
+                ))}
+            </Box>
+
+            {/* Calendar grid */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                {Array.from({ length: firstDay }).map((_, i) => <Box key={`empty-${i}`} />)}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1;
+                    const full = isBooked(day);
+                    const past = isPast(day);
+                    const sel = isSelected(day);
+                    const far = isTooFar(day);
+                    const disabled = full || past || far;
+
+                    return (
+                        <Box
+                            key={day}
+                            onClick={() => !disabled && handleDateClick(day)}
+                            sx={{
+                                height: 36,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 1.5,
+                                cursor: disabled ? 'default' : 'pointer',
+                                fontSize: '0.8rem',
+                                bgcolor: sel ? '#D4AF37' : 'transparent',
+                                color: sel ? 'black' : (disabled ? 'rgba(255,255,255,0.1)' : 'white'),
+                                position: 'relative',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    bgcolor: disabled ? 'transparent' : (sel ? '#D4AF37' : 'rgba(212, 175, 55, 0.1)')
+                                },
+                                ...(full && {
+                                    '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        width: '80%',
+                                        height: '1px',
+                                        bgcolor: 'rgba(255,255,255,0.2)',
+                                        transform: 'rotate(-45deg)'
+                                    }
+                                })
+                            }}
+                        >
+                            {day}
+                        </Box>
+                    );
+                })}
+            </Box>
+
+            <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#D4AF37' }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.6 }}>Selected</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', position: 'relative', '&::after': { content: '""', position: 'absolute', width: '100%', height: '1px', bgcolor: 'rgba(255,255,255,0.4)', transform: 'rotate(-45deg)', top: '50%' } }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.6 }}>Full</Typography>
+                </Box>
+            </Stack>
+        </Box>
     );
 }
 
