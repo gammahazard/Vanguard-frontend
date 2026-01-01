@@ -310,7 +310,7 @@ export default function SplashGate() {
                                     position: 'absolute',
                                     bottom: isChrome ? 'auto' : 15,
                                     top: isChrome ? 20 : 'auto',
-                                    right: '-5px',
+                                    right: '-7.5px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -319,9 +319,9 @@ export default function SplashGate() {
                                     pointerEvents: 'none'
                                 }}
                             >
-                                {!isChrome && <Typography variant="caption" sx={{ mb: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP DOTS</Typography>}
+                                {!isChrome && <Typography variant="caption" sx={{ fontSize: '0.65rem', mb: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP DOTS</Typography>}
                                 {isChrome ? <ArrowUpward sx={{ fontSize: 48, filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))' }} /> : <ArrowDownward sx={{ fontSize: 48, filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))' }} />}
-                                {isChrome && <Typography variant="caption" sx={{ mt: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP SQUARE</Typography>}
+                                {isChrome && <Typography variant="caption" sx={{ fontSize: '0.65rem', mt: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP SQUARE</Typography>}
                             </Box>
 
                         </Box>
