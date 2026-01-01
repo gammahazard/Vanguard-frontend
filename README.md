@@ -107,6 +107,12 @@ sequenceDiagram
 2.  **The "Unbreakable" Backend**: A Rust/Axum API that handles scheduling, financials, and audit logging without the bloat of traditional frameworks.
 3.  **Secure Access**: Role-Based Dashboards for Owners, Staff, and Clients.
 
+### Financial Integrity & Compliance
+We enforce strict financial standards to ensure auditability and trust.
+
+*   **Zero Liability Architecture**: Payment tokens are handled directly by the processor (Stripe). Our servers never touch raw credit card data (PCI-DSS Compliant by Design).
+*   **Crypto Compliance (USDC Only)**: To maintain AML/KYC standards, the platform strictly accepts **USDC** (USD Coin) on Ethereum/Solana. We reject high-volatility or privacy-focused tokens to ensure full regulatory transparency.
+
 ---
 
 ## 🧪 Validation & Testing (V1.1)

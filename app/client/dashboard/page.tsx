@@ -470,8 +470,8 @@ function CamCard({ name }: { name: string }) {
     // but mainly here we just render the video.
     return (
         <Paper sx={{
-            minWidth: 280, position: 'relative', overflow: 'hidden', borderRadius: 4,
-            border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9', bgcolor: '#000', flexShrink: 0
+            width: '100%', position: 'relative', overflow: 'hidden', borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9', bgcolor: '#000'
         }}>
             {/* LIVE Badge */}
             <Box sx={{
