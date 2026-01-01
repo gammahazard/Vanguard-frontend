@@ -21,7 +21,7 @@ export default function ServiceManager({ services: propServices, loading: propLo
     const loading = propLoading !== undefined ? propLoading : localLoading;
 
     const [editService, setEditService] = useState<Service | null>(null);
-    const [formData, setFormData] = useState({ price: 0, description: "" });
+    const [formData, setFormData] = useState({ price: "", description: "" });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -45,7 +45,7 @@ export default function ServiceManager({ services: propServices, loading: propLo
 
     const handleEdit = (service: Service) => {
         setEditService(service);
-        setFormData({ price: service.price, description: service.description || "" });
+        setFormData({ price: service.price.toString(), description: service.description || "" });
     };
 
     const handleSave = async () => {
@@ -165,7 +165,7 @@ export default function ServiceManager({ services: propServices, loading: propLo
                                     type="number"
                                     fullWidth
                                     value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                     InputProps={{
                                         startAdornment: <InputAdornment position="start">$</InputAdornment>,
                                     }}
