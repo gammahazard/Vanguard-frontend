@@ -52,6 +52,8 @@ export default function MessengerView() {
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
+            } else {
+                console.error("Failed to fetch messages:", res.status);
             }
         } catch (err) {
             console.error("Failed to fetch messages", err);
@@ -76,6 +78,9 @@ export default function MessengerView() {
             if (res.ok) {
                 setNewMessage("");
                 fetchMessages();
+            } else {
+                const errorText = await res.text();
+                console.error("Failed to send message:", res.status, errorText);
             }
         } catch (err) {
             console.error("Failed to send message", err);

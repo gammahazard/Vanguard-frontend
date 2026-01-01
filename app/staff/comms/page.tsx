@@ -36,7 +36,7 @@ interface Conversation {
     unreadCount: number;
 }
 
-const staffEmails = ['owner@vanguard.com', 'staff@vanguard.com', 'admin@vanguard.com', 'trainer@vanguard.com'];
+const staffEmails = ['jack@vanguard.com', 'staff@vanguard.com', 'admin@vanguard.com', 'trainer@vanguard.com'];
 
 export default function StaffCommsLog() {
     const theme = useTheme();
@@ -104,7 +104,7 @@ export default function StaffCommsLog() {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    receiver_email: selectedEmail,
+                    receiver: selectedEmail,
                     content: replyText
                 })
             });
@@ -114,9 +114,12 @@ export default function StaffCommsLog() {
                 fetchMessages(true); // Immediate refresh
                 setSnackbar({ open: true, message: "Message sent securedly." });
             } else {
+                const errorText = await res.text();
+                console.error("Staff Send Failed:", res.status, errorText);
                 throw new Error("Failed to send");
             }
         } catch (error) {
+            console.error("Staff Send Error:", error);
             setSnackbar({ open: true, message: "Transmission failed." });
         } finally {
             setSending(false);
@@ -128,7 +131,8 @@ export default function StaffCommsLog() {
 
         messages.forEach(msg => {
             // Determine who the "Client" is in this interaction
-            const isSenderStaff = staffEmails.some(s => msg.sender_email.toLowerCase().includes(s.split('@')[0]));
+            // Staff are always @vanguard.com
+            const isSenderStaff = msg.sender_email.toLowerCase().endsWith("@vanguard.com");
             const clientSide = isSenderStaff ? msg.receiver_email : msg.sender_email;
 
             // Skip internal staff-to-staff chatter if any (optional, keeping it cleaner for now)
