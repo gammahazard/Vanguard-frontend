@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vanguard-pwa-v1';
+const CACHE_NAME = 'vanguard-pwa-v1.1';
 const OFFLINE_URL = '/offline';
 
 const CACHE_ASSETS = [
@@ -50,13 +50,22 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Bypass cache for API calls - Always fetch fresh data
+    if (event.request.url.includes('/api/')) {
+        return; // Let the browser handle it normally
+    }
+
     // Static assets (CSS, JS, Images) - Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, networkResponse.clone());
-                });
+                // Only cache successful GET responses
+                if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
                 return networkResponse;
             });
             return cachedResponse || fetchPromise;

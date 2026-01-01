@@ -8,7 +8,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
     IconButton, TextField, CircularProgress, Skeleton
 } from "@mui/material";
-import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel, DeleteForever, Warning, Wallet, Edit, Chat } from "@mui/icons-material";
+import { Home, Pets, CalendarMonth, Person, Face, Notifications, CreditCard, Security, ChevronRight, Logout, CheckCircle, Cancel, DeleteForever, Warning, Wallet, Edit, Chat, BugReport } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
@@ -434,6 +434,31 @@ export default function ProfileView() {
                         >
                             Sign Out
                         </Button>
+
+                        <Box sx={{ pt: 2, pb: 4 }}>
+                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Diagnostics</Typography>
+                            <Button
+                                fullWidth
+                                variant="text"
+                                size="small"
+                                startIcon={<BugReport />}
+                                onClick={async () => {
+                                    if (confirm("This will perform a Hard Reset to fix caching issues. You will be signed out. Continue?")) {
+                                        localStorage.clear();
+                                        if ('serviceWorker' in navigator) {
+                                            const registrations = await navigator.serviceWorker.getRegistrations();
+                                            for (let r of registrations) await r.unregister();
+                                            const keys = await caches.keys();
+                                            for (let key of keys) await caches.delete(key);
+                                        }
+                                        window.location.href = '/';
+                                    }
+                                }}
+                                sx={{ color: '#64748b', textTransform: 'none', mt: 1 }}
+                            >
+                                Wipe App Cache & Reset (Fix UI Glitches)
+                            </Button>
+                        </Box>
                     </Stack>
                 </Container>
 
