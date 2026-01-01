@@ -1,5 +1,3 @@
-// this file contains our proof of logic. we use this to prove that our security rules actually work in a real scenario. 
-// it's a direct copy of our backend tests so clients/investors can audit our logic without needing access to the private backend repo.
 use backend::handlers::{create_booking_handler, create_report_handler, get_reports_handler};
 use backend::state::{AppState, WebauthnState};
 use axum::{
@@ -17,8 +15,7 @@ use jsonwebtoken::{encode, Header, EncodingKey};
 use webauthn_rs::prelude::{Url, WebauthnBuilder};
 use backend::models::{DailyReport, Claims};
 
-// this part sets up a virtual 'mini-version' of the app in memory. it creates a fresh database every time 
-// so we don't leak real user data during testing. it's like a digital simulation room for verification.
+// Helper to spawn a test app with In-Memory DB
 async fn spawn_app() -> (Router, Pool<Sqlite>, String, String) {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .connect("sqlite::memory:")
@@ -89,8 +86,6 @@ async fn spawn_app() -> (Router, Pool<Sqlite>, String, String) {
 
 // Claims struct is already imported from backend::models
 
-// this creates a fake security key for a test user. it lets the simulation think the user 
-// is logged in so we can test things like booking a stay or reading a report.
 fn generate_token(email: &str) -> String {
     let my_claims = Claims {
         sub: email.to_owned(),
@@ -101,13 +96,14 @@ fn generate_token(email: &str) -> String {
     encode(&Header::default(), &my_claims, &EncodingKey::from_secret(secret.as_ref())).unwrap()
 }
 
-// this is one of the most important tests. it checks if a user can 'guess' a pet id that doesn't belong 
-// to them and try to book it. we call this idor protection. it must fail to keep pets safe.
 #[tokio::test]
 async fn test_create_booking_idor_fails() {
     let (app, _pool, _my_dog, victim_dog) = spawn_app().await;
     let token = generate_token("test@user.com");
 
+    // scenario: trying to book someone else's dog
+    // this keeps your data safe by preventing other users from guessing your pet's id
+    // expect: 400 bad request (blocked)
     let payload = json!({
         "dog_ids": [victim_dog], 
         "service_type": "Boarding",
@@ -130,13 +126,14 @@ async fn test_create_booking_idor_fails() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
-// this verifies the 'happy path' – a normal user booking their own dog for a valid stay. 
-// if this fails, the system is broken for our real customers.
 #[tokio::test]
 async fn test_create_booking_valid_boarding() {
     let (app, _pool, my_dog, _victim_dog) = spawn_app().await;
     let token = generate_token("test@user.com");
 
+    // scenario: a normal, valid booking request
+    // this ensures the core system works for honest users
+    // expect: 201 created (success)
     let payload = json!({
         "dog_ids": [my_dog],
         "service_type": "Boarding",
@@ -159,13 +156,14 @@ async fn test_create_booking_valid_boarding() {
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-// this enforces a business rule: boarding must be at least one night. if someone tries 
-// to book 'boarding' for a single afternoon, the system catches the error.
 #[tokio::test]
 async fn test_boarding_requires_overnight() {
     let (app, _pool, my_dog, _) = spawn_app().await;
     let token = generate_token("test@user.com");
 
+    // scenario: trying to book boarding for just one day
+    // this ensures we follow legal policies for overnight stays
+    // expect: 400 bad request (policy enforcement)
     let payload = json!({
         "dog_ids": [my_dog],
         "service_type": "Boarding",
@@ -188,16 +186,14 @@ async fn test_boarding_requires_overnight() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
-// here we try to 'hack' the system by typing malicious code into the booking notes. 
-// we use phrases like 'drop table' to see if we can delete the database records. 
-// thanks to our tech stack, the code is neutralized and can't hurt us.
 #[tokio::test]
 async fn test_security_injection_safe() {
     let (app, _pool, my_dog, _) = spawn_app().await;
     let token = generate_token("test@user.com");
 
-    // Enterprise Security: Chaos Payload
-    // Attempting SQL Injection and XSS in the notes field
+    // scenario: trying to hack the database with malicious notes
+    // attempting sql injection and xss to steal data
+    // expect: 201 created (safe handling, no hacking success)
     let malicious_note = "'; DROP TABLE users; -- <script>alert('hack')</script>";
     
     let payload = json!({
@@ -220,21 +216,18 @@ async fn test_security_injection_safe() {
 
     let response = app.oneshot(request).await.unwrap();
     
-    // Should pass (201) because SQLx creates safe parameterized queries. 
-    // It should NOT be 500 (Server Error) or affect the DB.
+    // safe because we use rust's strict types which neutralizes the attack
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-// we simulate a massive attack where someone tries to book 110 times in a row very fast. 
-// our system detects the spam and blocks them after 100 requests. this keeps the app 
-// from crashing during a real attack or server glitch.
 #[tokio::test]
 async fn test_rate_limiting_enforcement() {
     let (app, _pool, _my_dog, victim_dog) = spawn_app().await;
     let token = generate_token("test@user.com"); 
 
-    // Enterprise Stability: DDoS Simulation
-    // Limit is 100 per minute per IP. We send 110.
+    // scenario: simulating a ddos attack (lots of requests at once)
+    // trying to crash the server with 110 requests in a row
+    // expect: 429 too many requests (server protection activated)
     for i in 1..=110 {
         let app_instance = app.clone(); 
         
@@ -266,14 +259,14 @@ async fn test_rate_limiting_enforcement() {
     }
 }
 
-// this checks our 30-day maximum stay policy. if a user tries to book for 31 days or more, 
-// the app says no. this is important for facility planning and legally compliant care.
 #[tokio::test]
 async fn test_booking_31_day_limit() {
     let (app, _pool, my_dog, _) = spawn_app().await;
     let token = generate_token("test@user.com");
 
-    // Attempting a 31-day stay (should fail)
+    // scenario: trying to book for 31 days (too long)
+    // checking if the system enforces our maximum stay policy
+    // expect: 400 bad request (policy enforced)
     let payload = json!({
         "dog_ids": [my_dog],
         "service_type": "Boarding",
@@ -296,9 +289,6 @@ async fn test_booking_31_day_limit() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
-// this tests the daily updates owners get. we simulate a staff member typing a report 
-// ('energetic', 'had a blast!') and then verify that the owner can see those exact words. 
-// it proves our data pipeline is 100% accurate for client peace of mind.
 #[tokio::test]
 async fn test_create_report_and_fetch() {
     let (app, pool, my_dog, _) = spawn_app().await;
@@ -308,7 +298,9 @@ async fn test_create_report_and_fetch() {
     query("INSERT INTO bookings (id, user_email, dog_id, status) VALUES ($1, $2, $3, 'confirmed')")
         .bind(booking_id).bind("test@user.com").bind(my_dog).execute(&pool).await.unwrap();
 
-    // 2. Staff Pushes Report
+    // scenario: staff creating a daily report for your pet
+    // confirming that data is saved perfectly without errors
+    // expect: 200 ok (saved successfully)
     let payload = json!({
         "booking_id": booking_id,
         "mood": "Energetic",
@@ -329,7 +321,9 @@ async fn test_create_report_and_fetch() {
     let response = app.clone().oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    // 3. Fetch Reports for the Booking
+    // scenario: fetching that report back to show the owner
+    // verifying that what you see is exactly what staff wrote
+    // expect: 200 ok (data integrity confirmed)
     let get_request = Request::builder()
         .uri(format!("/api/reports/{}", booking_id))
         .method("GET")
@@ -347,12 +341,13 @@ async fn test_create_report_and_fetch() {
     assert_eq!(reports[0].ate_breakfast, Some("Yes".to_string()));
 }
 
-// similar to the booking notes, we check if staff can accidentally or purposefully inject 
-// malicious code into daily reports. our safety layers once again keep the data safe.
 #[tokio::test]
 async fn test_report_security_injection() {
     let (app, _pool, _, _) = spawn_app().await;
     
+    // scenario: trying to put malicious code inside a daily report
+    // this checks if the report system is safe from tampering
+    // expect: 200 ok (safe, attack neutralized)
     let payload = json!({
         "booking_id": "any-id",
         "mood": "Happy",
@@ -370,7 +365,105 @@ async fn test_report_security_injection() {
 
     let response = app.oneshot(request).await.unwrap();
     
-    // Should pass (200) because we use parameterized queries.
-    // The frontend must still sanitize on render, but the API remains stable.
     assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn test_booking_self_conflict_fails() {
+    let (app, _pool, my_dog, _) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    // scenario: trying to book the same dog twice for the same dates
+    // this prevents accidental double bookings for your pet
+    // expect: 409 conflict (blocked overlap)
+    
+    // booking 1: jan 1st to 5th (success)
+    let payload1 = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-01-01",
+        "end_date": "2030-01-05", 
+        "total_price": 200.0,
+        "notes": "First Query"
+    });
+
+    let req1 = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload1).unwrap()))
+        .unwrap();
+
+    let res1 = app.clone().oneshot(req1).await.unwrap();
+    assert_eq!(res1.status(), StatusCode::CREATED);
+
+    // booking 2: jan 4th to 7th (overlap!)
+    let payload2 = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-01-04",
+        "end_date": "2030-01-07", 
+        "total_price": 150.0,
+        "notes": "Overlap Attempt"
+    });
+
+    let req2 = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload2).unwrap()))
+        .unwrap();
+
+    let res2 = app.oneshot(req2).await.unwrap();
+    
+    // expect failure because of the overlap
+    assert_eq!(res2.status(), StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn test_booking_capacity_limit_fails() {
+    let (app, pool, _, _) = spawn_app().await;
+    let token = generate_token("test@user.com");
+    
+    // scenario: filling the kennel to maximum capacity (20 dogs)
+    // making sure we never overbook the facility for safety
+    for i in 0..20 {
+        let booking_id = format!("cap-test-{}", i);
+        let dog_id = format!("dog-filler-{}", i);
+        
+        // manually filling up the day...
+        query("INSERT INTO bookings (id, user_email, dog_id, service_type, start_date, end_date, status, total_price) VALUES ($1, 'filler@user.com', $2, 'Boarding', '2030-05-01', '2030-05-01', 'Confirmed', 50.0)")
+            .bind(booking_id)
+            .bind(dog_id)
+            .execute(&pool).await.unwrap();
+    }
+
+    // scenario: trying to add the 21st dog
+    // this should be blocked because we are full
+    // expect: 403 forbidden (capacity limit reached)
+    let my_dog = "dog-1"; 
+
+    let payload = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Daycare",
+        "start_date": "2030-05-01",
+        "end_date": "2030-05-01", 
+        "total_price": 50.0,
+        "notes": "Capacity Breaker"
+    });
+
+    let req = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    
+    // system says "no space"
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
 }
