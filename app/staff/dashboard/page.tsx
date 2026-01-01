@@ -298,12 +298,18 @@ export default function StaffDashboard() {
 
     const handleUpdatePrice = async (id: string, newPrice: number) => {
         try {
-            await authenticatedFetch(`${API_BASE_URL}/api/services/${id}`, {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/services/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ price: newPrice })
             });
-            fetchServices();
-            setPriceEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+
+            if (res.ok) {
+                fetchServices();
+                setPriceEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+                setMessage({ text: "Price updated successfully", severity: "success", open: true });
+            } else {
+                setMessage({ text: "Failed to update price", severity: "error", open: true });
+            }
         } catch (e) {
             console.error(e);
         }
