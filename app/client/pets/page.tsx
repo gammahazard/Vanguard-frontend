@@ -599,13 +599,9 @@ function PetCard({ pet, onEdit, onDelete }: any) {
                                 />
                             )}
                             {!pet.vaccination_records && (
-                                <Chip
-                                    icon={<MedicalServices sx={{ fontSize: '0.8rem !important' }} />}
-                                    label="VAX MISSING"
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ borderRadius: 1, fontSize: '0.6rem', color: '#fb923c', borderColor: 'rgba(251, 146, 60, 0.3)', fontWeight: 'bold' }}
-                                />
+                                <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <MedicalServices sx={{ fontSize: '0.7rem' }} /> No Vaccination Records Provided
+                                </Typography>
                             )}
                         </Stack>
 
