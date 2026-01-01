@@ -65,9 +65,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             {children}
             <Snackbar
                 open={open}
-                autoHideDuration={6000}
+                autoHideDuration={1500}
                 onClose={handleClose}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
                 <Alert onClose={handleClose} severity={severity} variant="filled" sx={{ width: '100%', borderRadius: 3, fontWeight: 'bold' }}>
                     {message}

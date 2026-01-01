@@ -315,8 +315,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
                 </Box>
                 <Snackbar
                     open={message.open}
-                    autoHideDuration={4000}
+                    autoHideDuration={1500}
                     onClose={() => setMessage({ ...message, open: false })}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
                     <Alert severity={message.severity} sx={{ width: '100%', borderRadius: 3 }}>
                         {message.text}
