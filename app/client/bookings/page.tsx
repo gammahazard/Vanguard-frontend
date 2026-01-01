@@ -673,7 +673,9 @@ function BookingCard({ booking, pets, onCancel }: any) {
             <Stack direction="row" spacing={2} alignItems="center">
                 <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 40, height: 40, fontSize: '0.8rem' } }}>
                     {groupPets.map((p: any) => (
-                        <Avatar key={p.id} src={p.image_url}>{p.name[0]}</Avatar>
+                        <Avatar key={p.id} src={p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `${API_BASE_URL}${p.image_url}`) : undefined}>
+                            {p.name[0]}
+                        </Avatar>
                     ))}
                 </AvatarGroup>
                 <Box sx={{ flex: 1 }}>
@@ -702,7 +704,11 @@ function PastBookingCard({ booking, pets }: any) {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 30, height: 30, fontSize: '0.8rem' } }}>
-                        {groupPets.map((p: any) => <Avatar key={p.id} src={p.image_url}>{p.name[0]}</Avatar>)}
+                        {groupPets.map((p: any) => (
+                            <Avatar key={p.id} src={p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `${API_BASE_URL}${p.image_url}`) : undefined}>
+                                {p.name[0]}
+                            </Avatar>
+                        ))}
                     </AvatarGroup>
                     <Box>
                         <Stack direction="row" spacing={1} alignItems="center">
