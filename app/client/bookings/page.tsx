@@ -49,6 +49,12 @@ export default function BookingsView() {
         total_price: 0
     });
 
+    const [agreements, setAgreements] = useState({
+        cancel: false,
+        noshow: false,
+        payment: false
+    });
+
     const steps = ['Select VIP', 'Dates & Service', 'Confirm'];
 
     const handleNavChange = (newValue: number) => {
@@ -386,11 +392,39 @@ export default function BookingsView() {
                             </Stack>
                         )}
                         {activeStep === 2 && (
-                            <Box sx={{ py: 2, textAlign: 'center' }}>
-                                <Typography variant="h6">Ready to book?</Typography>
-                                <Typography variant="body2" color="text.secondary">VIPs: {pets.filter(p => formData.dog_ids.includes(p.id)).map(p => p.name).join(", ")}</Typography>
-                                <Typography variant="body2" color="text.secondary">Dates: {formData.start_date} to {formData.end_date}</Typography>
-                                <Typography variant="h4" sx={{ mt: 2, color: '#D4AF37' }}>${formData.total_price.toFixed(2)}</Typography>
+                            <Box sx={{ py: 2 }}>
+                                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                                    <Typography variant="h6">Ready to book?</Typography>
+                                    <Typography variant="body2" color="text.secondary">VIPs: {pets.filter(p => formData.dog_ids.includes(p.id)).map(p => p.name).join(", ")}</Typography>
+                                    <Typography variant="body2" color="text.secondary">Dates: {formData.start_date} to {formData.end_date}</Typography>
+                                    <Typography variant="h4" sx={{ mt: 2, color: '#D4AF37' }}>${formData.total_price.toFixed(2)}</Typography>
+                                </Box>
+
+                                <Paper sx={{ p: 2, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 2 }}>
+                                    <Typography variant="caption" fontWeight="bold" sx={{ color: '#ef4444', display: 'block', mb: 1, letterSpacing: 1 }}>
+                                        PLATFORM STANDARDS
+                                    </Typography>
+                                    <Stack spacing={1}>
+                                        <Stack direction="row" spacing={2} alignItems="start">
+                                            <input type="checkbox" id="policy-cancel" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, cancel: e.target.checked }))} />
+                                            <label htmlFor="policy-cancel" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+                                                I understand a $45 fee applies to cancellations within 72h.
+                                            </label>
+                                        </Stack>
+                                        <Stack direction="row" spacing={2} alignItems="start">
+                                            <input type="checkbox" id="policy-noshow" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, noshow: e.target.checked }))} />
+                                            <label htmlFor="policy-noshow" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+                                                I confirm I will attend my slot. Uncommunicated absences risk suspension.
+                                            </label>
+                                        </Stack>
+                                        <Stack direction="row" spacing={2} alignItems="start">
+                                            <input type="checkbox" id="policy-payment" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, payment: e.target.checked }))} />
+                                            <label htmlFor="policy-payment" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+                                                I acknowledge that we only accept Stripe or USDC (Solana/Eth). No exceptions.
+                                            </label>
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
                             </Box>
                         )}
                     </DialogContent>
@@ -401,7 +435,8 @@ export default function BookingsView() {
                             disabled={
                                 submitting ||
                                 formData.dog_ids.length === 0 ||
-                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date)))
+                                (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date))) ||
+                                (activeStep === 2 && (!agreements.cancel || !agreements.noshow || !agreements.payment))
                             }
                             onClick={activeStep < 2 ? handleNext : handleCreateBooking}
                             sx={{ bgcolor: '#D4AF37', color: 'black', minWidth: 100 }}

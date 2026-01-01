@@ -42,9 +42,6 @@ export default function WalletView() {
 
     const cryptoAssets = [
         { name: "USDC", full: "USD Coin", icon: <Diamond sx={{ color: '#2775ca' }} />, price: "$1.00", balance: "0.00", address: "0x742d...44e" },
-        { name: "USDT", full: "Tether", icon: <Diamond sx={{ color: '#26a17b' }} />, price: "$1.00", balance: "0.00", address: "0x911a...32c" },
-        { name: "ETH", full: "Ethereum", icon: <Hub sx={{ color: '#627eea' }} />, price: "$2,450.12", balance: "0.00", address: "0x22d...11b" },
-        { name: "BTC", full: "Bitcoin", icon: <CurrencyBitcoin sx={{ color: '#f7931a' }} />, price: "$43,120.50", balance: "0.00", address: "bc1q...88x" },
     ];
 
     return (
@@ -57,7 +54,7 @@ export default function WalletView() {
                         <IconButton onClick={() => router.back()} sx={{ color: 'white', mr: 2 }}>
                             <ArrowBack />
                         </IconButton>
-                        <Typography variant="h6" fontWeight="bold" sx={{ flex: 1 }}>Vanguard Finance</Typography>
+                        <Typography variant="h6" fontWeight="bold" sx={{ flex: 1 }}>Payments & Balance</Typography>
                         <Chip label="VIP" size="small" sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37', fontWeight: 'bold', border: '1px solid rgba(212, 175, 55, 0.3)' }} />
                     </Toolbar>
                 </AppBar>
@@ -223,41 +220,7 @@ export default function WalletView() {
                             </Stack>
                         </Paper>
 
-                        {/* Platform Standards & Policies */}
-                        <Paper sx={{
-                            p: 3,
-                            borderRadius: 4,
-                            bgcolor: 'rgba(239, 68, 68, 0.03)',
-                            border: '1px solid rgba(239, 68, 68, 0.1)',
-                        }}>
-                            <Stack spacing={2}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <InfoOutlined sx={{ color: '#ef4444', fontSize: 20 }} />
-                                    <Typography variant="overline" fontWeight="bold" sx={{ color: '#ef4444', letterSpacing: 2 }}>
-                                        PLATFORM STANDARDS
-                                    </Typography>
-                                </Stack>
-
-                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#ef4444', mb: 0.5 }}>
-                                            Cancellation Policy
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ opacity: 0.7, color: '#ef4444', display: 'block', lineHeight: 1.6 }}>
-                                            A $45 fee automatically applies to cancellations made within 72 hours of a confirmed reservation.
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#ef4444', mb: 0.5 }}>
-                                            Attendance & No-Shows
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ opacity: 0.7, color: '#ef4444', display: 'block', lineHeight: 1.6 }}>
-                                            Confirmed slots are reserved exclusively for you. Uncommunicated absences may result in immediate account suspension.
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                            </Stack>
-                        </Paper>
+                        {/* Platform Standards Moved to Booking Flow */}
 
                         {/* Recent History (Minimalist) */}
                         <Box sx={{ pb: 4 }}>
