@@ -7,7 +7,7 @@ import {
     Fab, Divider, Button, Dialog, DialogTitle, DialogContent,
     DialogActions, Stepper, Step, StepLabel, TextField,
     MenuItem, CircularProgress, Snackbar, Alert, Avatar, IconButton,
-    Grid, Skeleton
+    Grid, Skeleton, AvatarGroup
 } from "@mui/material";
 import { Home, Pets, CalendarMonth, Person, Add, AccessTime, CheckCircle, Close, Dangerous, Chat, Warning, Info, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
@@ -158,34 +158,59 @@ export default function BookingsView() {
         if (!bookingToCancel) return;
         setCancelling(true);
         try {
-            const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${bookingToCancel.id}`, {
-                method: 'PUT',
-                body: JSON.stringify({ status: "cancelled" })
-            });
+            // Support Batch Cancellation for Grouped Bookings
+            const idsToCancel = bookingToCancel.ids || [bookingToCancel.id];
 
-            if (res.ok) {
-                setSuccessMsg("Reservation retracted.");
-                setShowCancelConfirm(false);
-                setBookingToCancel(null);
-                fetchData();
-            } else {
-                setError("Failed to cancel reservation.");
-            }
+            await Promise.all(idsToCancel.map((id: string) =>
+                authenticatedFetch(`${API_BASE_URL}/api/bookings/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status: "cancelled" })
+                })
+            ));
+
+            setSuccessMsg("Reservation retracted.");
+            setShowCancelConfirm(false);
+            setBookingToCancel(null);
+            fetchData();
         } catch (err) {
-            setError("Connection error.");
+            setError("Failed to cancel reservation.");
         } finally {
             setCancelling(false);
         }
     };
 
-    const upcomingBookings = bookings.filter((b: any) => {
+    // Helper to group bookings by Start/End/Service/Status
+    const groupBookings = (list: any[]) => {
+        const groups: { [key: string]: any } = {};
+        list.forEach(b => {
+            const key = `${b.start_date}_${b.end_date}_${b.service_type}_${b.status}`;
+            if (!groups[key]) {
+                groups[key] = {
+                    ...b,
+                    dog_ids: [b.dog_id],
+                    ids: [b.id], // Track all booking IDs in this group
+                    total_price: b.total_price
+                };
+            } else {
+                if (!groups[key].dog_ids.includes(b.dog_id)) {
+                    groups[key].dog_ids.push(b.dog_id);
+                }
+                groups[key].ids.push(b.id);
+                groups[key].total_price += b.total_price;
+            }
+        });
+        return Object.values(groups).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    };
+
+    const upcomingBookings = groupBookings(bookings.filter((b: any) => {
         const s = b.status?.toLowerCase();
         return s !== 'completed' && s !== 'cancelled' && s !== 'declined';
-    });
-    const pastBookings = bookings.filter((b: any) => {
+    }));
+
+    const pastBookings = groupBookings(bookings.filter((b: any) => {
         const s = b.status?.toLowerCase();
         return s === 'completed' || s === 'cancelled' || s === 'declined';
-    });
+    }));
 
     // Check if a date is full
     const isDateFull = (dateStr: string) => availability.includes(dateStr);
@@ -356,8 +381,8 @@ export default function BookingsView() {
                                         <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-start' }}>
                                             <Chip
                                                 label={`Duration: ${formData.service_type === 'Daycare'
-                                                        ? Math.ceil(Math.abs(new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1 + " Day(s)"
-                                                        : Math.max(1, Math.ceil(Math.abs(new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24))) + " Night(s)"
+                                                    ? Math.ceil(Math.abs(new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1 + " Day(s)"
+                                                    : Math.max(1, Math.ceil(Math.abs(new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24))) + " Night(s)"
                                                     }`}
                                                 color="primary"
                                                 variant="outlined"
@@ -636,15 +661,27 @@ function AvailabilityCalendar({ startDate, endDate, availability, serviceType, o
 }
 
 function BookingCard({ booking, pets, onCancel }: any) {
-    const pet = pets.find((p: any) => p.id === booking.dog_id);
+    // Handle both grouped and single
+    const dogIds = booking.dog_ids || [booking.dog_id];
+    const groupPets = dogIds.map((id: string) => pets.find((p: any) => p.id === id)).filter(Boolean);
+
     return (
         <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
             {booking.status === 'Pending' && (
                 <IconButton size="small" onClick={onCancel} sx={{ position: 'absolute', top: 8, right: 8, color: 'text.secondary', '&:hover': { color: 'error.main' } }}><Close fontSize="small" /></IconButton>
             )}
             <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar src={pet?.image_url}>{pet?.name ? pet.name[0] : '?'}</Avatar>
-                <Box sx={{ flex: 1 }}><Typography variant="subtitle1" fontWeight="bold">{booking.service_type}</Typography><Typography variant="body2" color="text.secondary">{pet?.name || 'Unknown'}</Typography></Box>
+                <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 40, height: 40, fontSize: '0.8rem' } }}>
+                    {groupPets.map((p: any) => (
+                        <Avatar key={p.id} src={p.image_url}>{p.name[0]}</Avatar>
+                    ))}
+                </AvatarGroup>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight="bold">{booking.service_type}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        {groupPets.map((p: any) => p.name).join(", ")}
+                    </Typography>
+                </Box>
                 <Chip label={booking.status.toUpperCase()} size="small" variant="outlined" color={booking.status === 'Confirmed' ? 'success' : 'warning'} />
             </Stack>
             <Divider sx={{ my: 1.5, opacity: 0.1 }} />
@@ -657,15 +694,19 @@ function BookingCard({ booking, pets, onCancel }: any) {
 }
 
 function PastBookingCard({ booking, pets }: any) {
-    const pet = pets.find((p: any) => p.id === booking.dog_id);
+    const dogIds = booking.dog_ids || [booking.dog_id];
+    const groupPets = dogIds.map((id: string) => pets.find((p: any) => p.id === id)).filter(Boolean);
+
     return (
         <Paper sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar src={pet?.image_url} sx={{ width: 30, height: 30, fontSize: '0.8rem' }}>{pet?.name[0]}</Avatar>
+                    <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 30, height: 30, fontSize: '0.8rem' } }}>
+                        {groupPets.map((p: any) => <Avatar key={p.id} src={p.image_url}>{p.name[0]}</Avatar>)}
+                    </AvatarGroup>
                     <Box>
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <Typography variant="body2" fontWeight="500">{booking.service_type}</Typography>
+                            <Typography variant="body2" fontWeight="500">{booking.service_type} ({groupPets.length})</Typography>
                             {booking.status?.toLowerCase() === 'cancelled' && <Chip label="Cancelled" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 'bold' }} />}
                             {booking.status?.toLowerCase() === 'declined' && <Chip label="Declined" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 'bold' }} />}
                             {booking.status?.toLowerCase() === 'confirmed' && <Chip label="Confirmed" size="small" color="success" variant="outlined" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 'bold' }} />}
