@@ -209,64 +209,72 @@ export default function SplashGate() {
                     }}
                 >
                     <Fade in={showInstall}>
-                        <Paper
-                            elevation={24}
-                            sx={{
-                                bgcolor: '#15161A',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 4,
-                                p: 4,
-                                width: '90%',
-                                maxWidth: 400,
-                                textAlign: 'center',
-                                outline: 'none'
-                            }}
-                        >
-                            <Box sx={{ width: 60, height: 60, borderRadius: '50%', bgcolor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
-                                <Smartphone sx={{ color: '#D4AF37', fontSize: 30 }} />
-                            </Box>
+                        <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }} onClick={handleClose}>
+                            <Paper
+                                elevation={24}
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{
+                                    bgcolor: '#15161A',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 4,
+                                    p: 4,
+                                    width: '90%',
+                                    maxWidth: 400,
+                                    textAlign: 'center',
+                                    outline: 'none',
+                                    position: 'relative',
+                                    zIndex: 2
+                                }}
+                            >
+                                <Box sx={{ width: 60, height: 60, borderRadius: '50%', bgcolor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
+                                    <Smartphone sx={{ color: '#D4AF37', fontSize: 30 }} />
+                                </Box>
 
-                            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>
-                                Install Application
-                            </Typography>
+                                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>
+                                    Install Application
+                                </Typography>
 
-                            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
-                                For security reasons, this app runs best from your home screen.
-                            </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
+                                    For security reasons, this app runs best from your home screen.
+                                </Typography>
 
-                            <Stack spacing={2} sx={{ bgcolor: 'rgba(0,0,0,0.3)', p: 3, borderRadius: 3, textAlign: 'left', mb: 3 }}>
-                                <Stack direction="row" spacing={2} alignItems="flex-start">
-                                    <Share sx={{ color: '#3B82F6', fontSize: 24 }} />
-                                    <Typography variant="body2" color="#ccc">
-                                        1. Tap the <b>Share</b> button in the browser menu below.
-                                    </Typography>
+                                <Stack spacing={2} sx={{ bgcolor: 'rgba(0,0,0,0.3)', p: 3, borderRadius: 3, textAlign: 'left', mb: 3 }}>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <Share sx={{ color: '#3B82F6', fontSize: 24 }} />
+                                        <Typography variant="body2" color="#ccc">
+                                            1. Tap the <b>Share</b> button in the browser menu below.
+                                        </Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <AddBox sx={{ color: '#fff', fontSize: 24 }} />
+                                        <Typography variant="body2" color="#ccc">
+                                            2. Scroll down and select <b>Add to Home Screen</b>.
+                                        </Typography>
+                                    </Stack>
                                 </Stack>
-                                <Stack direction="row" spacing={2} alignItems="flex-start">
-                                    <AddBox sx={{ color: '#fff', fontSize: 24 }} />
-                                    <Typography variant="body2" color="#ccc">
-                                        2. Scroll down and select <b>Add to Home Screen</b>.
-                                    </Typography>
-                                </Stack>
-                            </Stack>
+                            </Paper>
 
-                            {/* Animated Arrow for iOS Safari */}
+                            {/* Animated Arrow - Fixed to Bottom Right */}
                             <Box
                                 component={motion.div}
                                 animate={{ y: [0, 10, 0] }}
                                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                                 sx={{
+                                    position: 'absolute',
+                                    bottom: 50,
+                                    right: 30,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     color: '#D4AF37',
-                                    mt: 2
+                                    zIndex: 10,
+                                    pointerEvents: 'none'
                                 }}
                             >
-                                <Typography variant="caption" sx={{ mb: 0.5, letterSpacing: 1, opacity: 0.8 }}>TAP BELOW</Typography>
-                                <ArrowDownward sx={{ fontSize: 32, filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.5))' }} />
+                                <Typography variant="caption" sx={{ mb: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP MENU</Typography>
+                                <ArrowDownward sx={{ fontSize: 48, filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.8))' }} />
                             </Box>
-
-                        </Paper>
+                        </Box>
                     </Fade>
                 </Modal>
 
