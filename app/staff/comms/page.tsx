@@ -36,94 +36,14 @@ interface Conversation {
     unreadCount: number;
 }
 
+const staffEmails = ['owner@vanguard.com', 'staff@vanguard.com', 'admin@vanguard.com', 'trainer@vanguard.com'];
+
 export default function StaffCommsLog() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Data State
     const [messages, setMessages] = useState<Message[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-
-    // UI State
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
-    const [replyText, setReplyText] = useState("");
-    const [sending, setSending] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean, message: string }>({ open: false, message: "" });
-
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    // Initial Fetch
-    useEffect(() => {
-        fetchMessages();
-        const interval = setInterval(() => fetchMessages(true), 15000); // 15s poll
-        return () => clearInterval(interval);
-    }, []);
-
-    // Scroll to bottom when conversation changes or new message sent
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [selectedEmail, messages]);
-
-    const fetchMessages = async (silent = false) => {
-        if (!silent) setLoading(true);
-        else setRefreshing(true);
-
-        try {
-            const token = localStorage.getItem("vanguard_token");
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.pokeframe.me'}/api/admin/messages`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setMessages(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch messages", error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
-    const handleSendMessage = async () => {
-        if (!replyText.trim() || !selectedEmail) return;
-        setSending(true);
-
-        try {
-            const token = localStorage.getItem("vanguard_token");
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.pokeframe.me'}/api/messages`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    receiver_email: selectedEmail,
-                    content: replyText
-                })
-            });
-
-            if (res.ok) {
-                setReplyText("");
-                fetchMessages(true); // Immediate refresh
-                setSnackbar({ open: true, message: "Message sent securedly." });
-            } else {
-                throw new Error("Failed to send");
-            }
-        } catch (error) {
-            setSnackbar({ open: true, message: "Transmission failed." });
-        } finally {
-            setSending(false);
-        }
-    };
-
-    // --- Derived Data ---
-
-    const staffEmails = ['owner@vanguard.com', 'staff@vanguard.com', 'admin@vanguard.com', 'trainer@vanguard.com'];
 
     const conversations: Conversation[] = useMemo(() => {
         const convoMap = new Map<string, Message[]>();

@@ -17,7 +17,34 @@ import { Download, Smartphone, Share, AddBox, Login, ArrowDownward, ArrowUpward 
 import { motion } from "framer-motion";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-// ... (Theme remains same)
+// --- Custom Dark/Gold Theme ---
+const theme = createTheme({
+    palette: {
+        mode: 'dark',
+        primary: {
+            main: '#D4AF37', // Gold
+        },
+        background: {
+            default: '#050608',
+            paper: '#0B0C10',
+        },
+    },
+    typography: {
+        fontFamily: 'Inter, sans-serif',
+    },
+    components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '50px',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                },
+            },
+        },
+    },
+});
 
 export default function SplashGate() {
     const [showInstall, setShowInstall] = useState(false);
