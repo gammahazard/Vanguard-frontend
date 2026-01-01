@@ -1,5 +1,5 @@
 import { Box, Paper, Typography, Chip, Stack, IconButton, Divider, Tooltip } from "@mui/material";
-import { Warning, Restaurant, SportsTennis, Medication, CrisisAlert, Assignment as AssignmentIcon, History } from "@mui/icons-material";
+import { Warning, Restaurant, SportsTennis, Medication, CrisisAlert, Assignment as AssignmentIcon, History, ExitToApp } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { GuestPet } from "@/types";
 
@@ -10,9 +10,10 @@ interface GuestListProps {
     onLogIncident: (pet: GuestPet) => void;
     onPostReport: (pet: GuestPet) => void;
     onViewHistory: (pet: GuestPet) => void;
+    onCheckOut: (pet: GuestPet) => void;
 }
 
-export default function GuestList({ guests, loading, onToggleAction, onLogIncident, onPostReport, onViewHistory }: GuestListProps) {
+export default function GuestList({ guests, loading, onToggleAction, onLogIncident, onPostReport, onViewHistory, onCheckOut }: GuestListProps) {
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
             {loading ? (
@@ -63,6 +64,8 @@ export default function GuestList({ guests, loading, onToggleAction, onLogIncide
                                 <Tooltip title="View History"><IconButton onClick={() => onViewHistory(guest)} sx={{ color: 'text.secondary', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}><History fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                                 <Tooltip title="Daily Update"><IconButton onClick={() => onPostReport(guest)} sx={{ color: '#D4AF37', '&:hover': { bgcolor: 'rgba(212, 175, 55, 0.1)' } }}><AssignmentIcon fontSize="small" /></IconButton></Tooltip>
+                                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                                <Tooltip title="Check Out"><IconButton onClick={() => onCheckOut(guest)} sx={{ color: 'text.secondary', '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><ExitToApp fontSize="small" /></IconButton></Tooltip>
                             </Stack>
                         </Box>
                     </Paper>

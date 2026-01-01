@@ -58,7 +58,8 @@ import {
     Fingerprint,
     BugReport,
     Favorite,
-    ContentCut
+    ContentCut,
+    AddAPhoto
 } from "@mui/icons-material";
 import BusinessDashboard from './components/BusinessDashboard';
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -174,6 +175,7 @@ export default function StaffDashboard() {
         image_url: ""
     });
     const [submittingReport, setSubmittingReport] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     const groupBookings = useCallback((bookings: EnrichedBooking[]): GroupedBookingRequest[] => {
         return Object.values(bookings.reduce((acc: any, booking: EnrichedBooking) => {
@@ -194,29 +196,8 @@ export default function StaffDashboard() {
     }, []);
 
     const fetchGuests = useCallback(async () => {
-        setLoadingGuests(true);
-        try {
-            const res = await authenticatedFetch(`${API_BASE_URL}/api/pets`);
-            if (res.ok) {
-                const pets = await res.json();
-                const mapped: GuestPet[] = pets.map((p: any) => ({
-                    id: p.id,
-                    name: p.name,
-                    breed: p.breed || 'Unknown',
-                    status: 'Active' as const,
-                    alerts: p.medical_info ? [p.medical_info] : [],
-                    fed: false,
-                    walked: false,
-                    meds: p.medical_info ? false : null,
-                    img: p.photo_url || `https://placedog.net/400/300?id=${p.id}`
-                }));
-                setGuests(mapped);
-            }
-        } catch (e) {
-            console.error("Failed to fetch guests", e);
-        } finally {
-            setLoadingGuests(false);
-        }
+        // Now handled by fetchPendingBookings via 'Checked In' status mapping.
+        // Keeping empty or redundant to avoid breaking dependency arrays.
     }, []);
 
     const fetchPendingBookings = useCallback(async () => {
@@ -262,6 +243,65 @@ export default function StaffDashboard() {
                     { label: "Check-Ins Today", value: arrivals.length.toString(), color: "text.primary" },
                     { label: "Departures", value: departures.toString(), color: "text.secondary" }
                 ]);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingBookings(false);
+        }
+    }, [groupBookings]);
+
+    // Replacement for fetchPendingBookings to handle Guest List Sync properly
+    const fetchDashboardData = useCallback(async () => {
+        setLoadingBookings(true);
+        try {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/staff/bookings`);
+            if (res.ok) {
+                const data = await res.json();
+                setAllBookings(data);
+
+                // 1. Separate Statuses
+                const pending = data.filter((b: any) => b.status?.toLowerCase() === 'pending');
+                const confirmed = data.filter((b: any) => b.status?.toLowerCase() === 'confirmed');
+                const checkedIn = data.filter((b: any) => b.status?.toLowerCase() === 'checked in');
+
+                // 2. Set Pending Groups
+                setPendingBookings(groupBookings(pending));
+
+                // 3. Set Recent Groups
+                const groupedConfirmed = groupBookings(confirmed);
+                setRecentBookings(groupedConfirmed.slice(0, 5));
+
+                // 4. Set Today's Arrivals
+                const today = new Date();
+                const todayStr = today.toDateString();
+                const arrivals = confirmed.filter((b: any) => new Date(b.start_date + 'T00:00:00').toDateString() === todayStr);
+                setTodaysArrivals(arrivals);
+
+                // 5. Calculate Real Stats
+                const guestsInHouseCount = checkedIn.length;
+                const departures = checkedIn.filter((b: any) => new Date(b.end_date + 'T00:00:00').toDateString() === todayStr).length;
+
+                setStats([
+                    { label: "Guests In House", value: guestsInHouseCount.toString(), color: "primary.main" },
+                    { label: "Check-Ins Today", value: arrivals.length.toString(), color: "text.primary" },
+                    { label: "Departures", value: departures.toString(), color: "text.secondary" }
+                ]);
+
+                // 6. Sync Guest List
+                const mappedGuests: GuestPet[] = checkedIn.map((b: any) => ({
+                    id: b.dog_id,
+                    name: b.dog_name || 'Guest',
+                    breed: 'Unknown',
+                    status: 'Active',
+                    alerts: b.notes ? [b.notes] : [],
+                    fed: false,
+                    walked: false,
+                    meds: null,
+                    img: `https://placedog.net/400/300?id=${b.dog_id.charCodeAt(0)}`
+                }));
+                setGuests(mappedGuests);
+                setLoadingGuests(false);
             }
         } catch (e) {
             console.error(e);
@@ -357,21 +397,21 @@ export default function StaffDashboard() {
         }
         // Always fetch pets for the Ops view
         fetchGuests();
-        fetchPendingBookings();
+        fetchDashboardData();
         fetchClients();
-    }, [fetchGuests, fetchPendingBookings, fetchClients, fetchStaff, fetchServices]);
+    }, [fetchGuests, fetchDashboardData, fetchClients, fetchStaff, fetchServices]);
 
     // Periodic Refresh (Auto-Polling)
     useEffect(() => {
         const interval = setInterval(() => {
             fetchClients();
-            fetchPendingBookings(); // Poll for new requests
+            fetchDashboardData(); // Poll for new requests
             if (viewMode === 'comms' && activeChat) {
                 fetchMessages(activeChat.email);
             }
         }, 10000); // 10s sync
         return () => clearInterval(interval);
-    }, [viewMode, activeChat, fetchClients, fetchMessages, fetchPendingBookings]);
+    }, [viewMode, activeChat, fetchClients, fetchMessages, fetchDashboardData]);
 
     const markAsRead = async (email: string) => {
         try {
@@ -446,7 +486,7 @@ export default function StaffDashboard() {
 
             if (res.ok) {
                 setMessage({ text: `Booking ${action} successfully!`, severity: "success", open: true });
-                fetchPendingBookings();
+                fetchDashboardData();
                 fetchGuests();
             } else {
                 setMessage({ text: `Update failed`, severity: "error", open: true });
@@ -487,7 +527,7 @@ export default function StaffDashboard() {
             console.error("Batch failed", e);
             setMessage({ text: "Critical batch error", severity: "error", open: true });
         } finally {
-            fetchPendingBookings();
+            fetchDashboardData();
             fetchGuests();
         }
     };
@@ -542,7 +582,7 @@ export default function StaffDashboard() {
                 setMessage({ text: `${booking.dog_name || 'VIP'} checked in successfully!`, severity: "success", open: true });
                 setShowCheckInModal(false);
                 fetchGuests();
-                fetchPendingBookings();
+                fetchDashboardData();
             } else {
                 setMessage({ text: "Check-in failed", severity: "error", open: true });
             }
@@ -558,6 +598,26 @@ export default function StaffDashboard() {
             }
             return g;
         }));
+    };
+
+    const handleCheckOut = async (guest: GuestPet) => {
+        const booking = allBookings.find((b: any) => b.dog_id === guest.id && b.status === 'Checked In');
+        if (!booking) return;
+
+        if (!confirm(`Check out ${guest.name}?`)) return;
+
+        try {
+            const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: 'Completed' })
+            });
+            if (res.ok) {
+                setMessage({ text: `${guest.name} checked out!`, severity: "success", open: true });
+                fetchDashboardData();
+            }
+        } catch (e) {
+            setMessage({ text: "Checkout failed", severity: "error", open: true });
+        }
     };
 
     const handleOpenReport = async (pet: GuestPet) => {
@@ -600,6 +660,39 @@ export default function StaffDashboard() {
             setMessage({ text: "Failed to load history", severity: "error", open: true });
         } finally {
             setHistoryLoading(false);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        setUploading(true);
+        try {
+            const token = localStorage.getItem('vanguard_token');
+            const res = await fetch(`${API_BASE_URL}/api/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // Content-Type not set, let browser set boundary for multipart
+                },
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setReportData({ ...reportData, image_url: data.url });
+                setMessage({ text: "Photo uploaded successfully!", severity: "success", open: true });
+            } else {
+                setMessage({ text: "Upload failed", severity: "error", open: true });
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            setMessage({ text: "Upload error", severity: "error", open: true });
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -743,6 +836,7 @@ export default function StaffDashboard() {
                             onLogIncident={(pet) => { setSelectedPet(pet); setShowIncidentModal(true); }}
                             onPostReport={handleOpenReport}
                             onViewHistory={handleViewHistory}
+                            onCheckOut={handleCheckOut}
                         />
                     </motion.div>
                 )}
@@ -1400,15 +1494,32 @@ export default function StaffDashboard() {
                             </TextField>
                         </Stack>
 
-                        <TextField
-                            label="Photo URL (Moment)"
-                            fullWidth
-                            variant="filled"
-                            placeholder="https://..."
-                            value={reportData.image_url}
-                            onChange={e => setReportData({ ...reportData, image_url: e.target.value })}
-                            helperText="Paste a URL for a VIP photo"
-                        />
+                        <Box sx={{ border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 2, p: 2, textAlign: 'center' }}>
+                            <input
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                id="raised-button-file"
+                                type="file"
+                                onChange={handleFileUpload}
+                            />
+                            <label htmlFor="raised-button-file">
+                                <Button component="span" startIcon={uploading ? <CircularProgress size={20} /> : <AddAPhoto />} disabled={uploading} sx={{ color: 'text.secondary' }}>
+                                    {uploading ? "Uploading..." : "Upload Photo (Moment)"}
+                                </Button>
+                            </label>
+                            {reportData.image_url && (
+                                <Box sx={{ mt: 2, position: 'relative' }}>
+                                    <img src={reportData.image_url.startsWith('http') ? reportData.image_url : `${API_BASE_URL}${reportData.image_url}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setReportData({ ...reportData, image_url: "" })}
+                                        sx={{ position: 'absolute', top: 5, right: 5, bgcolor: 'rgba(0,0,0,0.5)', color: 'white' }}
+                                    >
+                                        <Cancel />
+                                    </IconButton>
+                                </Box>
+                            )}
+                        </Box>
 
                         <TextField
                             label="Notes for Owner"
