@@ -7,6 +7,10 @@
 ![Security](https://img.shields.io/badge/Mission%20Critical-8/8%20Tests%20Passing-green?style=for-the-badge)
 ![Deployment](https://img.shields.io/badge/Infrastructure-Linode--Vercel-black?style=for-the-badge&logo=vercel)
 
+![TS](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![MUI](https://img.shields.io/badge/Material--UI-007FFF?style=for-the-badge&logo=mui&logoColor=white)
+![Snyk](https://img.shields.io/badge/Snyk-Secure-8241f9?style=for-the-badge&logo=snyk)
+
 **This repository serves as a technical demonstration of Vanguard Secure Solutions' capabilities.**  
 It represents a high-reliability management platform developed for luxury dog kennels, showcasing our commitment to **Engineering Trust** through memory-safe systems and transparent security audits.
 
@@ -67,7 +71,7 @@ graph TD
 A real-time, transparency-first interface designed to provide pet owners with absolute peace of mind.
 
 ![Living Dashboard Showcase](./docs/images/dashboard-showcase.png)
-*Figure 1: The Glassmorphic Client Dashboard featuring real-time weather, presence tracking, and care status.*
+<p align="center"><i>Figure 1: The Glassmorphic Client Dashboard featuring real-time weather, presence tracking, and care status.</i></p>
 
 *   **Dynamic Weather Feed**: Localized conditions for Lakeshore, ON, ensuring owners understand environmental care decisions.
 *   **"Moments" Gallery**: High-resolution snapshots and status updates (Mood, Meals, Energy) pushed by staff in real-time.
@@ -81,7 +85,7 @@ A real-time, transparency-first interface designed to provide pet owners with ab
 Our digital "Pawsport" system transforms basic registration into a high-security biometric-style profile.
 
 ![VIP Pawsport Showcase](./docs/images/pet-passport.png)
-*Figure 2: The Digital Pawsport - A secure, biometric-inspired profile for every VIP guest.*
+<p align="center"><i>Figure 2: The Digital Pawsport - A secure, biometric-inspired profile for every VIP guest.</i></p>
 
 *   **Security Strip Design**: Every pet is assigned a unique cryptographic VIP ID.
 *   **Compliance Tracking**: At-a-glance verification of Vaccinations, Microchips, and Care Requirements.
@@ -140,7 +144,7 @@ We don't just claim security—we prove it. Our full integration suite is availa
 > **Why this matters**: Most platforms skip these "hidden" security tests. Vanguard builds them into the core deployment pipeline to ensure your data stays safe as the app scales.
 
 ![Automated Verification Pass](./docs/images/test-results.png)
-*Figure 3: Full integration suite execution - 8/8 Critical Scenarios Verified.*
+<p align="center"><i>Figure 3: Full integration suite execution - 8/8 Critical Scenarios Verified.</i></p>
 
 ---
 
@@ -153,7 +157,7 @@ Our refined booking flow prioritizes **transparency** and **financial integrity*
 *   **Policy Enforced**: Dates and service types are validated against facility rules (e.g., Boarding vs. Daycare logic).
 
 ![Booking Wizard Showcase](./docs/images/booking-wizard.png)
-*Figure 4: The Smart Booking interface designed for zero-friction client requests.*
+<p align="center"><i>Figure 4: The Smart Booking interface designed for zero-friction client requests.</i></p>
 
 ---
 
