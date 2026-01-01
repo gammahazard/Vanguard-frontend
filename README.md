@@ -1,6 +1,6 @@
 ﻿# 🛡️ Vanguard Secure Solutions | Portfolio Showcase
 
-## Project: "The Kennel Platform" (MVP)
+## Project: "The Kennel Platform" (Flagship Implementation)
 
 ![Status](https://img.shields.io/badge/Status-Verified--Audit-gold?style=for-the-badge)
 ![Tech Stack](https://img.shields.io/badge/Stack-Rust--NextJS--SQLite-blue?style=for-the-badge)

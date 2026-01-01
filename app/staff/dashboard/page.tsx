@@ -297,21 +297,28 @@ export default function StaffDashboard() {
     }, []);
 
     const handleUpdatePrice = async (id: string, newPrice: number) => {
+        const previousServices = [...services];
+
         try {
+            // Optimistic Update: Update UI immediately
+            setServices(prev => prev.map(s => s.id === id ? { ...s, price: newPrice } : s));
+            setPriceEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+
             const res = await authenticatedFetch(`${API_BASE_URL}/api/services/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ price: newPrice })
             });
 
             if (res.ok) {
-                fetchServices();
-                setPriceEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
                 setMessage({ text: "Price updated successfully", severity: "success", open: true });
             } else {
-                setMessage({ text: "Failed to update price", severity: "error", open: true });
+                throw new Error("Update failed");
             }
         } catch (e) {
             console.error(e);
+            // Rollback on failure
+            setServices(previousServices);
+            setMessage({ text: "Failed to update price", severity: "error", open: true });
         }
     };
 
