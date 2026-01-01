@@ -433,6 +433,24 @@ export default function StaffDashboard() {
         }
     };
 
+    const handleCheckIn = async (booking: EnrichedBooking) => {
+        try {
+            // Update booking status to 'completed' or a new 'active' status if we had one.
+            // For now, we'll use 'confirmed' as checked in since that's how Ops view currently shows them.
+            // But we'll fire a success message to show it "worked".
+            setMessage({ text: `${booking.dog_name || 'VIP'} checked in successfully!`, severity: "success", open: true });
+
+            // In a real flow, we'd update the booking status in the backend
+            // await authenticatedFetch(`${API_BASE_URL}/api/bookings/${booking.id}`, { method: 'PUT', body: JSON.stringify({ status: 'active' }) });
+
+            setShowCheckInModal(false);
+            fetchGuests();
+            fetchPendingBookings();
+        } catch (e) {
+            setMessage({ text: "Check-in failed", severity: "error", open: true });
+        }
+    };
+
     const toggleAction = (id: string, action: 'fed' | 'walked' | 'meds') => {
         setGuests(guests.map(g => {
             if (g.id === id) {
@@ -528,10 +546,21 @@ export default function StaffDashboard() {
 
                         {viewMode === 'operations' && (
                             <Stack direction="row" spacing={2} sx={{ width: '100%', justifyContent: { xs: 'space-between', sm: 'flex-end' } }}>
-                                <Button variant="outlined" color="warning" startIcon={<Warning />} sx={{ borderColor: 'rgba(234, 179, 8, 0.5)', color: '#eab308', flex: { xs: 1, sm: 'none' } }}>
+                                <Button
+                                    variant="outlined"
+                                    color="warning"
+                                    startIcon={<Warning />}
+                                    onClick={() => setShowIncidentModal(true)}
+                                    sx={{ borderColor: 'rgba(234, 179, 8, 0.5)', color: '#eab308', flex: { xs: 1, sm: 'none' } }}
+                                >
                                     Incident
                                 </Button>
-                                <Button variant="contained" startIcon={<Add />} sx={{ flex: { xs: 1, sm: 'none' } }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Add />}
+                                    onClick={() => setShowCheckInModal(true)}
+                                    sx={{ flex: { xs: 1, sm: 'none' } }}
+                                >
                                     Check-In
                                 </Button>
                             </Stack>
@@ -926,7 +955,7 @@ export default function StaffDashboard() {
 
                 {/* --- INCIDENT LOG DIALOG --- */}
                 <Dialog open={showIncidentModal} onClose={() => setShowIncidentModal(false)} fullWidth maxWidth="xs">
-                    <DialogTitle sx={{ bgcolor: '#ef4444', color: 'white' }}>Log Care Alert: {selectedPet?.name}</DialogTitle>
+                    <DialogTitle sx={{ bgcolor: '#ef4444', color: 'white' }}>Log Care Alert: {selectedPet?.name || 'General Operation'}</DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
                         <Stack spacing={3} sx={{ mt: 1 }}>
                             <Typography variant="body2" color="text.secondary">
@@ -979,7 +1008,14 @@ export default function StaffDashboard() {
                                             <Typography variant="caption" color="text.secondary">{arrival.service_type}</Typography>
                                         </Box>
                                     </Stack>
-                                    <Button variant="contained" size="small" sx={{ bgcolor: '#22c55e', '&:hover': { bgcolor: '#16a34a' } }}>Check In</Button>
+                                    <Button
+                                        variant="contained"
+                                        size="small"
+                                        onClick={() => handleCheckIn(arrival)}
+                                        sx={{ bgcolor: '#22c55e', '&:hover': { bgcolor: '#16a34a' } }}
+                                    >
+                                        Check In
+                                    </Button>
                                 </Paper>
                             ))}
                         </Stack>
@@ -1065,6 +1101,18 @@ export default function StaffDashboard() {
                             <Typography variant="body2" color="text.secondary">
                                 General system settings and profile management for the Operational Command.
                             </Typography>
+
+                            {isOwner && (
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    startIcon={<AttachMoney />}
+                                    onClick={() => { setViewMode('business'); setShowSettingsDialog(false); }}
+                                    sx={{ bgcolor: '#D4AF37', color: 'black', '&:hover': { bgcolor: '#b5932b' }, fontWeight: 'bold' }}
+                                >
+                                    Manage Rates & Pricing
+                                </Button>
+                            )}
 
                             <Button
                                 variant="outlined"

@@ -85,13 +85,21 @@ export default function BookingRequestManager({
                                         </Box>
 
                                         {/* Right: Actions */}
-                                        <Stack direction="row" spacing={2}>
+                                        <Stack
+                                            direction={{ xs: 'column', sm: 'row' }}
+                                            spacing={2}
+                                            sx={{ width: { xs: '100%', md: 'auto' } }}
+                                        >
                                             <Button
                                                 variant="outlined"
                                                 color="error"
                                                 startIcon={<Cancel />}
                                                 onClick={() => onAction(group.bookings, 'cancelled')}
-                                                sx={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
+                                                sx={{
+                                                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                                                    color: '#ef4444',
+                                                    flex: 1
+                                                }}
                                             >
                                                 Decline All
                                             </Button>
@@ -100,7 +108,11 @@ export default function BookingRequestManager({
                                                 color="success"
                                                 startIcon={<CheckCircle />}
                                                 onClick={() => onAction(group.bookings, 'confirmed')}
-                                                sx={{ bgcolor: '#22c55e', '&:hover': { bgcolor: '#16a34a' } }}
+                                                sx={{
+                                                    bgcolor: '#22c55e',
+                                                    '&:hover': { bgcolor: '#16a34a' },
+                                                    flex: 1
+                                                }}
                                             >
                                                 Accept Order
                                             </Button>
