@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
     Box, Typography, Container, Stack, Paper, TextField, IconButton,
     Avatar, CircularProgress, ThemeProvider, CssBaseline, BottomNavigation,
-    BottomNavigationAction, AppBar, Toolbar, Skeleton
+    BottomNavigationAction, AppBar, Toolbar, Skeleton, Badge
 } from "@mui/material";
 import {
     Send, ArrowBack, Home, Pets as PetIcon, CalendarMonth,
@@ -52,6 +52,16 @@ export default function MessengerView() {
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
+
+                // If the last message is from staff and unread, mark all staff messages as read
+                const unreadFromStaff = data.some((m: any) =>
+                    m.sender_email.toLowerCase() !== userEmail.toLowerCase() &&
+                    m.is_read === 0
+                );
+
+                if (unreadFromStaff) {
+                    markRead();
+                }
             } else {
                 console.error("Failed to fetch messages:", res.status);
             }
@@ -59,6 +69,17 @@ export default function MessengerView() {
             console.error("Failed to fetch messages", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const markRead = async () => {
+        try {
+            await authenticatedFetch(`/api/messages/read`, {
+                method: 'PUT',
+                body: JSON.stringify({ sender_email: staffEmail })
+            });
+        } catch (err) {
+            console.error("Failed to mark messages as read", err);
         }
     };
 
@@ -271,7 +292,11 @@ export default function MessengerView() {
                         <BottomNavigationAction label="Home" icon={<Home />} />
                         <BottomNavigationAction label="Pets" icon={<PetIcon />} />
                         <BottomNavigationAction label="Bookings" icon={<CalendarMonth />} />
-                        <BottomNavigationAction label="Chat" icon={<ChatIcon />} />
+                        <BottomNavigationAction label="Chat" icon={
+                            <Badge badgeContent={0} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}>
+                                <ChatIcon />
+                            </Badge>
+                        } />
                         <BottomNavigationAction label="Profile" icon={<Person />} />
                     </BottomNavigation>
                 </Paper>

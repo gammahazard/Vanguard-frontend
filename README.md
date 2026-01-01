@@ -20,6 +20,7 @@ It represents a high-reliability management platform developed for luxury dog ke
 *   [🌟 The Vanguard Vision](#-the-vanguard-vision)
 *   [🖼️ The Living Dashboard](#-the-living-dashboard)
 *   [🪪 VIP Pawsports](#-vip-pawsports)
+*   [💬 Concierge Guest Messenger](#-concierge-guest-messenger)
 *   [🔒 Security Architecture](#-security-architecture)
 *   [🧪 Validation & Audit (PASS 8/8)](#-validation--audit-pass-88)
 *   [📝 Smart Booking System](#-smart-booking-system)
@@ -100,9 +101,22 @@ Our digital "Pawsport" system transforms basic registration into a high-security
 <p align="center"><i>Figure 2: The Digital Pawsport - A secure, biometric-inspired profile for every VIP guest.</i></p>
 
 *   **Security Strip Design**: Every pet is assigned a unique cryptographic VIP ID.
-*   **Compliance Tracking**: At-a-glance verification of Vaccinations, Microchips, and Care Requirements.
+*   [Compliance Tracking](#): At-a-glance verification of Vaccinations, Microchips, and Care Requirements.
 *   **Biometric Grid**: Real-time tracking of age, weight, and temperament classification.
 *   **Machine-Readable Integrity**: Footer metadata designed for internal auditing and verification.
+
+---
+
+## 💬 Concierge Guest Messenger
+
+Our integrated chat system provides direct access to kennel staff, ensuring real-time care updates and immediate peace of mind.
+
+![Concierge Guest Messenger](./docs/images/message.png)
+<p align="center"><i>Figure 3: Integrated Messenger featuring real-time staff presence, concierge care shortcuts, and persistent unread badges.</i></p>
+
+*   **Real-Time Presence**: Instant visibility of staff online status via dynamic indicators.
+*   **Concierge Shortcuts**: One-tap buttons for common requests (e.g., "Status Request", "Update Feeding Notes"), streamlining communication for busy owners.
+*   **Persistent Notifications**: Red "unread" badges on the platform dashboard ensure no staff update goes unnoticed.
 
 ---
 
@@ -157,7 +171,7 @@ We don't just claim security—we prove it. Our full integration suite is availa
 > **Why this matters**: Most platforms skip these "hidden" security tests. Vanguard builds them into the core deployment pipeline to ensure your data stays safe as the app scales.
 
 ![Automated Verification Pass](./docs/images/test-results.png)
-<p align="center"><i>Figure 3: Full integration suite execution - 8/8 Critical Scenarios Verified.</i></p>
+<p align="center"><i>Figure 4: Full integration suite execution - 8/8 Critical Scenarios Verified.</i></p>
 
 ---
 
@@ -170,7 +184,7 @@ Our refined booking flow prioritizes **transparency** and **financial integrity*
 *   **Policy Enforced**: Dates and service types are validated against facility rules (e.g., Boarding vs. Daycare logic).
 
 ![Booking Wizard Showcase](./docs/images/booking-wizard.png)
-<p align="center"><i>Figure 4: The Smart Booking interface designed for zero-friction client requests.</i></p>
+<p align="center"><i>Figure 5: The Smart Booking interface designed for zero-friction client requests.</i></p>
 
 ---
 

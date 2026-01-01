@@ -50,12 +50,20 @@ export default function SplashGate() {
     const [showInstall, setShowInstall] = useState(false);
     const [isPWA, setIsPWA] = useState(false);
     const [browserType, setBrowserType] = useState<'chrome-ios' | 'safari-ios' | 'firefox' | 'desktop-chrome' | 'other'>('other');
+    const [isReturning, setIsReturning] = useState(false);
 
     useEffect(() => {
         // Check PWA Support
         const checkPWA = () => {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
             setIsPWA(isStandalone);
+        };
+
+        // Returning User Detection: If we have an email or name in storage, they've been here.
+        const checkReturning = () => {
+            const hasEmail = !!localStorage.getItem('vanguard_email');
+            const hasUser = !!localStorage.getItem('vanguard_user');
+            setIsReturning(hasEmail || hasUser);
         };
 
         // Enhanced Browser Detection
@@ -79,6 +87,7 @@ export default function SplashGate() {
         };
 
         checkPWA();
+        checkReturning();
         checkBrowser();
         window.addEventListener('resize', checkPWA);
         return () => window.removeEventListener('resize', checkPWA);
@@ -166,7 +175,7 @@ export default function SplashGate() {
                     </Stack>
 
                     {/* Content Switch */}
-                    {!isPWA ? (
+                    {(!isPWA && !isReturning) ? (
                         /* --- BROWSER MODE: INSTALL PROMPT --- */
                         <Stack spacing={4} width="100%" alignItems="center">
                             <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', fontWeight: 300, maxWidth: '280px' }}>
@@ -189,8 +198,13 @@ export default function SplashGate() {
                                     }
                                 }}
                             >
-                                Install App
                             </Button>
+
+                            <Link href="/client/login" style={{ textDecoration: 'none' }}>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: 'primary.main' }, cursor: 'pointer', transition: 'color 0.2s' }}>
+                                    Already a member? Access Portal
+                                </Typography>
+                            </Link>
                         </Stack>
                     ) : (
                         /* --- PWA MODE: UNIFIED ACCESS --- */
@@ -215,6 +229,13 @@ export default function SplashGate() {
                                 </Button>
                             </Link>
 
+                            <Button
+                                onClick={handleOpen}
+                                variant="text"
+                                sx={{ color: 'rgba(212, 175, 55, 0.4)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                            >
+                                Re-install Instructions
+                            </Button>
                         </Stack>
                     )}
 

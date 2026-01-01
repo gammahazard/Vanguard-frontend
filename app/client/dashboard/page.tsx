@@ -61,6 +61,7 @@ export default function ClientDashboard() {
     const [weather, setWeather] = useState({ temp: 72, condition: "Sunny", icon: "☀️" });
     const [nextStay, setNextStay] = useState<Booking | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [msgUnreadCount, setMsgUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showUpsell, setShowUpsell] = useState(false);
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -120,6 +121,16 @@ export default function ClientDashboard() {
             if (notifRes.ok) {
                 const notifs = await notifRes.json();
                 setUnreadCount(notifs.filter((n: Notification) => !n.is_read).length);
+            }
+
+            const msgRes = await authenticatedFetch(`/api/messages`);
+            if (msgRes.ok) {
+                const msgs = await msgRes.json();
+                const unreadMsgs = msgs.filter((m: any) =>
+                    m.receiver_email.toLowerCase() === email.toLowerCase() &&
+                    m.is_read === 0
+                ).length;
+                setMsgUnreadCount(unreadMsgs);
             }
         } catch (err) {
             console.error("Home fetch failed", err);
@@ -394,7 +405,11 @@ export default function ClientDashboard() {
                         <BottomNavigationAction label="Home" icon={<Home />} />
                         <BottomNavigationAction label="Pets" icon={<Pets />} />
                         <BottomNavigationAction label="Bookings" icon={<CalendarMonth />} />
-                        <BottomNavigationAction label="Chat" icon={<Chat />} />
+                        <BottomNavigationAction label="Chat" icon={
+                            <Badge badgeContent={msgUnreadCount} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}>
+                                <Chat />
+                            </Badge>
+                        } />
                         <BottomNavigationAction label="Profile" icon={<Person />} />
                     </BottomNavigation>
                 </Paper>
