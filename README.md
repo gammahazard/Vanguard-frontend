@@ -111,12 +111,11 @@ Our digital "Pawsport" system transforms basic registration into a high-security
 
 Our integrated chat system provides direct access to kennel staff, ensuring real-time care updates and immediate peace of mind.
 
-````carousel
 ![Client View - Concierge Messenger](./docs/images/message.png)
-<!-- slide -->
+<p align="center"><i>Figure 3: Integrated Messenger - The Client Concierge interface with presence tracking and quick actions.</i></p>
+
 ![Staff View - Dashboard Messenger](./docs/images/staffview.png)
-````
-<p align="center"><i>Figure 3: Integrated Messenger - Showing Client Concierge interface (Slide 1) and Staff Operational view (Slide 2).</i></p>
+<p align="center"><i>Figure 4: The Staff Operational View - Real-time guest management and centralized communication.</i></p>
 
 *   **Real-Time Presence**: Instant visibility of staff online status via dynamic indicators.
 *   **Concierge Shortcuts**: One-tap buttons for common requests (e.g., "Status Request", "Update Feeding Notes"), streamlining communication for busy owners.
@@ -175,7 +174,7 @@ We don't just claim security—we prove it. Our full integration suite is availa
 > **Why this matters**: Most platforms skip these "hidden" security tests. Vanguard builds them into the core deployment pipeline to ensure your data stays safe as the app scales.
 
 ![Automated Verification Pass](./docs/images/test-results.png)
-<p align="center"><i>Figure 4: Full integration suite execution - 8/8 Critical Scenarios Verified.</i></p>
+<p align="center"><i>Figure 5: Full integration suite execution - 8/8 Critical Scenarios Verified.</i></p>
 
 ---
 
@@ -188,7 +187,7 @@ Our refined booking flow prioritizes **transparency** and **financial integrity*
 *   **Policy Enforced**: Dates and service types are validated against facility rules (e.g., Boarding vs. Daycare logic).
 
 ![Booking Wizard Showcase](./docs/images/booking-wizard.png)
-<p align="center"><i>Figure 5: The Smart Booking interface designed for zero-friction client requests.</i></p>
+<p align="center"><i>Figure 6: The Smart Booking interface designed for zero-friction client requests.</i></p>
 
 ---
 
