@@ -13,7 +13,7 @@ import {
     CssBaseline,
     useMediaQuery
 } from "@mui/material";
-import { Download, Smartphone, Share, AddBox, Login, ArrowDownward, ArrowUpward } from "@mui/icons-material";
+import { Download, Smartphone, Share, AddBox, Login, ArrowDownward, ArrowUpward, Security } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -324,26 +324,43 @@ export default function SplashGate() {
                                 {isChrome && <Typography variant="caption" sx={{ mt: 0.5, letterSpacing: 1, opacity: 0.8, fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>TAP SQUARE</Typography>}
                             </Box>
 
-                            {/* Stylized Footer */}
-                            <Box sx={{ position: 'absolute', bottom: 30, left: 0, width: '100%', textAlign: 'center', zIndex: 1, pointerEvents: 'none' }}>
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: '#D4AF37', // Gold
-                                        fontStyle: 'italic',
-                                        letterSpacing: '0.1em',
-                                        opacity: 0.7,
-                                        fontSize: '0.65rem'
-                                    }}
-                                >
-                                    Powered by Vanguard Secure Solutions
-                                </Typography>
-                            </Box>
                         </Box>
                     </Fade>
                 </Modal>
 
+                {/* --- GLOBAL BRANDING FOOTER --- */}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        bottom: { xs: 20, md: 40 },
+                        left: 0,
+                        width: '100%',
+                        textAlign: 'center',
+                        zIndex: 5,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: '#D4AF37',
+                            fontWeight: 700,
+                            letterSpacing: '0.2em',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            fontSize: '0.65rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1
+                        }}
+                    >
+                        <Security sx={{ fontSize: 14 }} /> Powered by Vanguard Secure Solutions
+                    </Typography>
+                    <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(212, 175, 55, 0.3)', mx: 'auto', mt: 1, borderRadius: 1 }} />
+                </Box>
+
             </Box>
-        </ThemeProvider>
+        </ThemeProvider >
     );
 }

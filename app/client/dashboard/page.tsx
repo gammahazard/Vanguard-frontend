@@ -16,12 +16,12 @@ import {
     BottomNavigationAction,
     ThemeProvider,
     CssBaseline,
-
     Collapse,
     Badge,
     Dialog,
     DialogContent,
     DialogActions,
+    Close as CloseIcon
 } from "@mui/material";
 import {
     Home,
@@ -42,7 +42,9 @@ import {
     ArrowForward,
     Chat,
     Fingerprint,
-    Close
+    Close,
+    Add,
+    Security
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
@@ -72,11 +74,9 @@ export default function ClientDashboard() {
     }, []);
 
     const fetchDashboardData = async () => {
-        // We still get email for local logic (Upsell hiding), but NOT for fetching
         const email = typeof window !== 'undefined' ? localStorage.getItem('vanguard_email') : null;
         if (!email) return;
 
-        // FACE ID UPSELL LOGIC (Account-Specific)
         const faceidEnabled = localStorage.getItem('vanguard_faceid_enabled') === 'true';
         const hideUpsell = localStorage.getItem(`vanguard_hide_upsell_${email}`) === 'true';
         setCurrentEmail(email);
@@ -86,18 +86,15 @@ export default function ClientDashboard() {
         }
 
         try {
-            // AUTH UPDATE: Use authenticatedFetch and remove query param
             const res = await authenticatedFetch(`/api/user/bookings`);
             if (res.ok) {
                 const bookings = await res.json();
 
-                // Calculate Balance (Simulated "Rich" Account for Demo + Actual Bookings)
                 const total = bookings
                     .filter((b: Booking) => b.status?.toLowerCase() === "confirmed")
                     .reduce((sum: number, b: Booking) => sum + b.total_price, 0);
-                setBalance(total + 25000); // 25k simulation
+                setBalance(total);
 
-                // Find next/current stay
                 const upcoming = bookings
                     .filter((b: Booking) => b.status !== "completed" && b.status !== "cancelled")
                     .sort((a: Booking, b: Booking) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
@@ -105,7 +102,6 @@ export default function ClientDashboard() {
                 if (upcoming.length > 0) {
                     setNextStay(upcoming[0]);
 
-                    // Fetch latest report for this booking
                     const reportRes = await authenticatedFetch(`/api/reports/${upcoming[0].id}`);
                     if (reportRes.ok) {
                         const reports = await reportRes.json();
@@ -116,7 +112,6 @@ export default function ClientDashboard() {
                 }
             }
 
-            // Fetch notifications
             const notifRes = await authenticatedFetch(`/api/notifications`);
             if (notifRes.ok) {
                 const notifs = await notifRes.json();
@@ -168,7 +163,6 @@ export default function ClientDashboard() {
                 <Container maxWidth="sm" sx={{ pt: 3, position: 'relative', zIndex: 1 }}>
                     <Stack spacing={3}>
 
-                        {/* 0. LATEST REPORT CARD (New Feature) */}
                         {latestReport && (
                             <Box>
                                 <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.1em', pl: 1, display: 'block', mb: 1 }}>
@@ -215,13 +209,11 @@ export default function ClientDashboard() {
                             </Box>
                         )}
 
-                        {/* 1. STATUS BADGE */}
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, p: 1, pl: 2, width: 'fit-content' }}>
                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4ade80', boxShadow: '0 0 10px #4ade80' }} />
                             <Typography variant="caption" sx={{ fontWeight: 600 }}>Guest is Active</Typography>
                         </Stack>
 
-                        {/* 2. LIVE KENNEL CAMS (Horizontal Scroll) */}
                         <Box>
                             <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.1em', pl: 1 }}>
                                 Live Kennel Transparency
@@ -237,7 +229,6 @@ export default function ClientDashboard() {
                             </Stack>
                         </Box>
 
-                        {/* 3. NEXT STAY QUICK VIEW */}
                         {nextStay && nextStay.status === 'confirmed' && (
                             <Paper sx={{
                                 p: 2.5,
@@ -261,13 +252,11 @@ export default function ClientDashboard() {
                             </Paper>
                         )}
 
-                        {/* 4. DAILY HIGHLIGHTS (Horizontal Scroll) */}
                         <Box>
                             <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.1em', pl: 1 }}>
                                 Today&apos;s Highlights
                             </Typography>
                             <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1, mx: -2, px: 2, mt: 1, '::-webkit-scrollbar': { display: 'none' } }}>
-                                {/* Dynamic logic could go here, for now keeping mock */}
                                 <HighlightCard
                                     icon={<Restaurant sx={{ color: '#4ade80' }} />}
                                     time="08:30 AM"
@@ -289,7 +278,6 @@ export default function ClientDashboard() {
                             </Stack>
                         </Box>
 
-                        {/* 4. COMPACT BILLING SNAPSHOT */}
                         <Paper
                             onClick={() => router.push('/client/wallet')}
                             sx={{
@@ -323,11 +311,33 @@ export default function ClientDashboard() {
                             </Stack>
                         </Paper>
 
-                    </Stack>
-                </Container >
+                        {/* 5. AVAILABLE CAPITAL (The Mock Money Request) */}
+                        <Paper
+                            sx={{
+                                p: 2.5,
+                                borderRadius: 4,
+                                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%)',
+                                border: '1px solid rgba(212, 175, 55, 0.2)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.1em' }}>
+                                    Available Capital
+                                </Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 700 }}>$25,000.00</Typography>
+                            </Box>
+                            <IconButton sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: 'primary.main' }}>
+                                <Add />
+                            </IconButton>
+                        </Paper>
 
-                {/* --- BOTTOM NAVIGATION --- */}
-                < Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, borderTop: '1px solid rgba(255,255,255,0.05)' }} elevation={3} >
+                    </Stack>
+                </Container>
+
+                <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, borderTop: '1px solid rgba(255,255,255,0.05)' }} elevation={3}>
                     <BottomNavigation
                         showLabels
                         value={navValue}
@@ -345,18 +355,14 @@ export default function ClientDashboard() {
                         <BottomNavigationAction label="Chat" icon={<Chat />} />
                         <BottomNavigationAction label="Profile" icon={<Person />} />
                     </BottomNavigation>
-                </Paper >
+                </Paper>
 
-            </Box >
+            </Box>
 
-            {/* --- FACE ID UPSELL MODAL --- */}
             <Dialog
                 open={showUpsell}
                 onClose={(event, reason) => {
-                    // Prevent closing on backdrop click
-                    if (reason && reason === "backdropClick")
-                        return;
-
+                    if (reason && reason === "backdropClick") return;
                     setShowUpsell(false);
                     if (dontShowAgain && currentEmail) {
                         localStorage.setItem(`vanguard_hide_upsell_${currentEmail}`, 'true');
@@ -383,27 +389,17 @@ export default function ClientDashboard() {
                         }}
                         sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}
                     >
-                        <Close fontSize="small" />
+                        <Close />
                     </IconButton>
 
                     <Box sx={{
-                        width: 64,
-                        height: 64,
-                        bgcolor: 'rgba(212, 175, 55, 0.1)',
-                        borderRadius: '50%',
-                        mx: 'auto',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 2,
-                        mt: 2
+                        width: 64, height: 64, bgcolor: 'rgba(212, 175, 55, 0.1)', borderRadius: '50%',
+                        mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2, mt: 2
                     }}>
                         <Fingerprint sx={{ fontSize: 40, color: 'primary.main' }} />
                     </Box>
 
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                        Faster, Safer Access
-                    </Typography>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>Faster, Safer Access</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Would you like to enable Face ID or Touch ID for your next login? It&apos;s more secure and faster than passwords.
                     </Typography>
@@ -439,35 +435,22 @@ export default function ClientDashboard() {
                     <Stack direction="row" alignItems="center" justifyContent="center" sx={{ mt: 2 }}>
                         <input
                             type="checkbox"
-                            id="dontShowAgain"
                             checked={dontShowAgain}
                             onChange={(e) => setDontShowAgain(e.target.checked)}
                             style={{ marginRight: 8, accentColor: '#D4AF37' }}
                         />
-                        <label htmlFor="dontShowAgain" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-                            Don&apos;t show this again
-                        </label>
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>Don&apos;t show this again</Typography>
                     </Stack>
-
-                    <Typography variant="caption" sx={{ mt: 1.5, display: 'block', opacity: 0.5 }}>
-                        Tip: You can always find this in your Profile settings.
-                    </Typography>
                 </Box>
             </Dialog>
 
-        </ThemeProvider >
+        </ThemeProvider>
     );
 }
 
 function HighlightCard({ icon, time, title, desc }: { icon: any, time: string, title: string, desc: string }) {
     return (
-        <Paper sx={{
-            minWidth: 140,
-            p: 2,
-            borderRadius: 3,
-            bgcolor: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.05)'
-        }}>
+        <Paper sx={{ minWidth: 140, p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <Stack spacing={1}>
                 {icon}
                 <Box>
@@ -483,66 +466,19 @@ function HighlightCard({ icon, time, title, desc }: { icon: any, time: string, t
 function CamCard({ name }: { name: string }) {
     return (
         <Paper sx={{
-            minWidth: 280,
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 4,
-            border: '1px solid rgba(255,255,255,0.1)',
-            aspectRatio: '16/9',
-            bgcolor: '#0f172a',
-            flexShrink: 0
+            minWidth: 280, position: 'relative', overflow: 'hidden', borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9', bgcolor: '#0f172a', flexShrink: 0
         }}>
-            {/* Status Overlay */}
-            <Box sx={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                zIndex: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                bgcolor: 'rgba(0, 0, 0, 0.6)',
-                px: 1.2,
-                py: 0.4,
-                borderRadius: 1,
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-                <Box sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    bgcolor: '#ef4444',
-                    boxShadow: '0 0 8px #ef4444'
-                }} />
+            <Box sx={{ position: 'absolute', top: 12, left: 12, zIndex: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(0, 0, 0, 0.6)', px: 1.2, py: 0.4, borderRadius: 1, backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ef4444', boxShadow: '0 0 8px #ef4444' }} />
                 <Typography variant="caption" fontWeight="bold" sx={{ color: '#ef4444', fontSize: '0.65rem', letterSpacing: 1 }}>OFFLINE</Typography>
             </Box>
-
-            {/* Main Visual */}
             <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
                 <Videocam sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="caption" fontFamily="monospace" color="text.secondary">NO SIGNAL</Typography>
             </Box>
-
-            {/* Scanline Effect (CSS Mock) */}
-            <Box sx={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 50%)',
-                backgroundSize: '100% 4px',
-                opacity: 0.2,
-                pointerEvents: 'none'
-            }} />
-
-            {/* Footer Name */}
-            <Box sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                p: 2,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)'
-            }}>
+            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 50%)', backgroundSize: '100% 4px', opacity: 0.2, pointerEvents: 'none' }} />
+            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 2, background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="caption" sx={{ fontWeight: 500, opacity: 0.9 }}>{name}</Typography>
                     <Typography variant="caption" fontFamily="monospace" sx={{ opacity: 0.5, fontSize: '0.6rem' }}>CAM-{Math.floor(Math.random() * 99)}</Typography>

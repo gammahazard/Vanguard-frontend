@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 
 export default function WalletView() {
     const router = useRouter();
-    const [balance, setBalance] = useState(125.50);
+    const [balance, setBalance] = useState(25000.00);
     const [showApplePay, setShowApplePay] = useState(false);
     const [selectedCoin, setSelectedCoin] = useState<any>(null);
     const [step, setStep] = useState(0); // 0: init, 1: authenticating, 2: success
