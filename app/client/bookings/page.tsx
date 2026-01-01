@@ -369,7 +369,10 @@ export default function BookingsView() {
                                         fullWidth
                                         disabled={formData.service_type === 'Daycare'}
                                         InputLabelProps={{ shrink: true }}
-                                        inputProps={{ min: formData.start_date || new Date().toISOString().split('T')[0] }}
+                                        inputProps={{
+                                            min: formData.start_date || new Date().toISOString().split('T')[0],
+                                            max: formData.start_date ? new Date(new Date(formData.start_date).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined
+                                        }}
                                         value={formData.end_date}
                                         onChange={e => setFormData({ ...formData, end_date: e.target.value })}
                                         variant="filled"
@@ -431,12 +434,6 @@ export default function BookingsView() {
                                                 I confirm I will attend my slot. Uncommunicated absences risk suspension.
                                             </label>
                                         </Stack>
-                                        <Stack direction="row" spacing={2} alignItems="start">
-                                            <input type="checkbox" id="policy-payment" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, payment: e.target.checked }))} />
-                                            <label htmlFor="policy-payment" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
-                                                I acknowledge that we only accept Stripe or USDC (Solana/Eth). No exceptions.
-                                            </label>
-                                        </Stack>
                                     </Stack>
                                 </Paper>
 
@@ -467,7 +464,7 @@ export default function BookingsView() {
                                 submitting ||
                                 formData.dog_ids.length === 0 ||
                                 (activeStep === 1 && (!formData.start_date || !formData.end_date || isRangeFull(formData.start_date, formData.end_date) || isStayTooLong(formData.start_date, formData.end_date))) ||
-                                (activeStep === 2 && (!agreements.cancel || !agreements.noshow || !agreements.payment))
+                                (activeStep === 2 && (!agreements.cancel || !agreements.noshow))
                             }
                             onClick={activeStep < 2 ? handleNext : handleCreateBooking}
                             sx={{ bgcolor: '#D4AF37', color: 'black', minWidth: 100 }}

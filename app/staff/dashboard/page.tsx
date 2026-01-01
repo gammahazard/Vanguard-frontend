@@ -305,7 +305,7 @@ export default function StaffDashboard() {
         fetchGuests();
         fetchPendingBookings();
         fetchClients();
-    }, [fetchGuests, fetchPendingBookings, fetchClients, fetchStaff]);
+    }, [fetchGuests, fetchPendingBookings, fetchClients, fetchStaff, fetchServices]);
 
     // Periodic Refresh for Comms/Directory
     useEffect(() => {
