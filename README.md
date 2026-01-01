@@ -103,40 +103,42 @@ sequenceDiagram
 ```
 
 ### Key Solutions Delivered
-1.  **The "Dinner Demo" UI**: A mobile-first Client Portal designed to wow investors in under 30 seconds.
-2.  **The "Unbreakable" Backend**: A Rust/Axum API that handles scheduling, financials, and audit logging without the bloat of traditional frameworks.
-3.  **Secure Access**: Role-Based Dashboards for Owners, Staff, and Clients.
+1.  **The "Living Dashboard"**: A real-time, transparency-first interface featuring:
+    *   **Dynamic Weather Feed**: Localized conditions for Lakeshore, ON.
+    *   **"Moments" Gallery**: High-resolution snapshots and status updates pushed by staff in real-time.
+    *   **VIP Presence Tracking**: Instant visibility of active boarders and their care status (Meals, Playtime).
+2.  **The "Unbreakable" Backend**: A Rust/Axum API that handles scheduling, financials, and audit logging with zero-downtime stability.
+3.  **Secure Access**: WebAuthn (FaceID) powered Biometric Login and RBAC isolation.
 
 ### Financial Integrity & Compliance
 We enforce strict financial standards to ensure auditability and trust.
 
 *   **Zero Liability Architecture**: Payment tokens are handled directly by the processor (Stripe). Our servers never touch raw credit card data (PCI-DSS Compliant by Design).
-*   **Crypto Compliance (USDC Only)**: To maintain AML/KYC standards, the platform strictly accepts **USDC** (USD Coin) on Ethereum/Solana. We reject high-volatility or privacy-focused tokens to ensure full regulatory transparency.
+*   **Booking Integrity**: Payments are only collected *after* manual staff confirmation, ensuring zero billing errors for clients.
 
 ---
 
-## 🧪 Validation & Testing (V1.1)
+## 🧪 Validation & Testing (V1.5)
 
-We enforce strict business logic to prevent errors and abuse.
+We enforce strict business logic to prevent errors and abuse. Our full integration suite is available for audit in [`/tests/backend_integration_tests.rs.txt`](./tests/backend_integration_tests.rs.txt).
 
 ### 1. IDOR Protection (Secure Booking)
 *   **Vector**: User A trying to book User B's dog by guessing the ID.
 *   **Defense**: `create_booking_handler` iterates all dog IDs and runs a DB check: `WHERE id = ? AND owner_email = ?`.
 *   **Result**: 400 Bad Request (Immediate Rejection).
 
-### 2. Temporal Logic (Date Rules)
+### 2. Temporal & Logic Rules
 *   **No Time Travel**: Check-in cannot be in the past (`start_date >= TODAY`).
-*   **Boarding Policy**: Must be Overnight (`end_date > start_date`). Same-day boarding is rejected.
-*   **Daycare Policy**: Must be Single Day (`start_date == end_date`). Multi-day daycare is rejected.
-*   **Max Stay**: Capped at 30 days to prevent abuse.
+*   **Boarding Policy**: Must be Overnight. Same-day boarding is rejected.
+*   **Max Stay**: Strictly capped at 30 days for operational safety.
+*   **Audit Logic**: Staff status updates (Mood, Meals, Activity) are verified for data integrity.
 
 ---
-
 
 ## 📂 Technical Structure
 
 *   **/frontend**: Next.js 14 + Tailwind CSS (The visual experience).
-*   **/backend**: Rust + SQLite (The secure engine).
+*   **/frontend/tests**: Publicly auditable integration test logic.
 *   **/docs**: System architecture and technical onboarding manuals.
 
 ---
@@ -145,61 +147,47 @@ We enforce strict business logic to prevent errors and abuse.
 We chose this stack to demonstrate **Vanguard Secure Solutions'** commitment to:
 *   **Performance**: Sub-millisecond API response times.
 *   **Security**: Memory-safe languages (Rust) prevent entire classes of vulnerabilities.
-*   **Scalability**: A cloud-native design ready for high-load environments.
 
-### 7. Final Automated Verification (Pass)
-The following integration tests were executed on the production server to verify the critical path:
-*   ✅ **`test_create_booking_idor_fails`**: Confirmed that clients cannot book pets they do not own.
-*   ✅ **`test_boarding_requires_overnight`**: Confirmed that single-day "boarding" attempts are rejected.
-*   ✅ **`test_create_booking_valid_boarding`**: Confirmed that valid overnight requests are accepted.
+### 7. Final Automated Verification (8/8 PASS)
+The following integration tests were executed to verify the mission-critical path:
+*   ✅ **`test_create_booking_idor_fails`**: Ownership validation.
+*   ✅ **`test_boarding_requires_overnight`**: Policy enforcement.
+*   ✅ **`test_create_booking_valid_boarding`**: Happy path.
+*   ✅ **`test_booking_31_day_limit`**: Constraint enforcement.
+*   ✅ **`test_create_report_and_fetch`**: Real-time moment gallery integrity.
+*   ✅ **`test_report_security_injection`**: Content safety.
+*   ✅ **`test_security_injection_safe`**: SQLi Protection.
+*   ✅ **`test_rate_limiting_enforcement`**: DDoS Resistance.
 
 #### 🛡️ Proof of Logic (Actual Test Code)
-We don't fake tests. Here is the actual Rust code enforcing IDOR protection in `backend/tests/api_tests.rs`:
+We don't fake tests. Here is a snippet of the code enforcing IDOR protection (View full audit file in [`/tests`](./tests)):
 
 ```rust
 #[tokio::test]
 async fn test_create_booking_idor_fails() {
-    // ... (See full file)
-    // MUST FAIL with 400 Bad Request
+    let (app, _pool, _my_dog, victim_dog) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    let payload = json!({ "dog_ids": [victim_dog], ... });
+    let response = app.oneshot(request).await.unwrap();
+    
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 ```
 
-#### 🛡️ Enterprise Grade: DDoS & Injection Testing
-We also stress-test the system against abuse:
-
-**1. Rate Limiting (DDoS Protection)**
-*   **Vector**: Spamming the API with 100+ requests/sec.
-*   **Defense**: Middleware tracks IP counts in atomic `DashMap`.
-*   **Test**: Loop 110 requests; verify requests 101+ return `429 Too Many Requests`.
-
-```rust
-#[tokio::test]
-async fn test_rate_limiting_enforcement() {
-    // ...
-    if i <= 100 {
-        assert_ne!(response.status(), StatusCode::TOO_MANY_REQUESTS);
-    } else {
-        assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
-    }
-}
-```
-
-**2. Chaos Payloads (Injection Safety)**
-*   **Vector**: Submitting `'; DROP TABLE users; --` in booking notes.
-*   **Defense**: Rust SQLx uses strict parameter binding. The DB literally cannot execute the string as code.
-*   **Test**: Submit payload and verify clean `201 Created` (Safe persistence).
-
-#### 🟢 Verification Output (Linode Production)
+#### 🟢 Verification Output ( Linode Production Engine )
 ```text
-running 5 tests
+running 8 tests
 test test_boarding_requires_overnight ... ok
+test test_booking_31_day_limit ... ok
 test test_create_booking_idor_fails ... ok
 test test_create_booking_valid_boarding ... ok
-test test_security_injection_safe ... ok
+test test_create_report_and_fetch ... ok
 test test_rate_limiting_enforcement ... ok
+test test_report_security_injection ... ok
+test test_security_injection_safe ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
 ```
 
 ---

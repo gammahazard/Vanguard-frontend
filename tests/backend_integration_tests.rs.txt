@@ -1,0 +1,352 @@
+use backend::handlers::{create_booking_handler, create_report_handler, get_reports_handler};
+use backend::state::{AppState, WebauthnState};
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+    routing::{post, get},
+    Router,
+};
+use tower::ServiceExt; 
+use sqlx::{Pool, Sqlite, query};
+use std::sync::Arc;
+use dashmap::DashMap;
+use serde_json::json;
+use jsonwebtoken::{encode, Header, EncodingKey};
+use webauthn_rs::prelude::{Url, WebauthnBuilder};
+use backend::models::{DailyReport, Claims};
+
+// Helper to spawn a test app with In-Memory DB
+async fn spawn_app() -> (Router, Pool<Sqlite>, String, String) {
+    let pool = sqlx::sqlite::SqlitePoolOptions::new()
+        .connect("sqlite::memory:")
+        .await
+        .expect("Failed to create test DB");
+
+    // Run Migrations 
+    sqlx::query("
+        CREATE TABLE users (email TEXT PRIMARY KEY, password TEXT, name TEXT, phone TEXT, role TEXT, faceid_enabled BOOLEAN DEFAULT FALSE, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE pets (id TEXT PRIMARY KEY, owner_email TEXT, name TEXT, breed TEXT, age INTEGER, medical_notes TEXT, image_url TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE bookings (id TEXT PRIMARY KEY, user_email TEXT, dog_id TEXT, service_type TEXT, start_date TEXT, end_date TEXT, status TEXT, total_price REAL, notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, processed_by TEXT, status_note TEXT);
+        CREATE TABLE notifications (id TEXT PRIMARY KEY, user_email TEXT, title TEXT, content TEXT, type TEXT, is_read BOOLEAN DEFAULT FALSE, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE daily_reports (id TEXT PRIMARY KEY, booking_id TEXT, date TEXT, mood TEXT, activity TEXT, image_url TEXT, notes TEXT, ate_breakfast TEXT, ate_dinner TEXT, playtime_status TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+    ")
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Seed User & Pet
+    let user_email = "test@user.com";
+    let other_user = "victim@user.com";
+    
+    // User 1
+    query("INSERT INTO users (email, role) VALUES ($1, 'client')")
+        .bind(user_email)
+        .execute(&pool).await.unwrap();
+
+    // User 2 (Victim)
+    query("INSERT INTO users (email, role) VALUES ($1, 'client')")
+        .bind(other_user)
+        .execute(&pool).await.unwrap();
+
+    // User 1's Dog
+    let my_dog_id = "dog-1";
+    query("INSERT INTO pets (id, owner_email, name) VALUES ($1, $2, 'Buddy')")
+        .bind(my_dog_id).bind(user_email).execute(&pool).await.unwrap();
+
+    // Victim's Dog
+    let victim_dog_id = "dog-2";
+    query("INSERT INTO pets (id, owner_email, name) VALUES ($1, $2, 'VictimDog')")
+        .bind(victim_dog_id).bind(other_user).execute(&pool).await.unwrap();
+
+    // WebAuthn Setup (Correct Builder Pattern)
+    let rp_id = "localhost";
+    let origin_url = Url::parse("http://localhost").unwrap();
+    let builder = WebauthnBuilder::new(rp_id, &origin_url).unwrap();
+    let webauthn = Arc::new(builder.build().unwrap());
+
+    let state = AppState {
+        pool: pool.clone(),
+        webauthn: Arc::new(WebauthnState {
+            webauthn,
+            challenges: DashMap::new(),
+            login_challenges: DashMap::new(),
+        }),
+        rate_limit_store: Arc::new(DashMap::new()),
+    };
+
+    let app = Router::new()
+        .route("/api/bookings", post(create_booking_handler))
+        .route("/api/reports", post(create_report_handler))
+        .route("/api/reports/:id", get(get_reports_handler))
+        .layer(axum::middleware::from_fn_with_state(state.clone(), backend::rate_limit::rate_limit_middleware))
+        .with_state(state);
+
+    (app, pool, my_dog_id.to_string(), victim_dog_id.to_string())
+}
+
+// Claims struct is already imported from backend::models
+
+fn generate_token(email: &str) -> String {
+    let my_claims = Claims {
+        sub: email.to_owned(),
+        role: "client".to_owned(),
+        exp: 10000000000, 
+    };
+    let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+    encode(&Header::default(), &my_claims, &EncodingKey::from_secret(secret.as_ref())).unwrap()
+}
+
+#[tokio::test]
+async fn test_create_booking_idor_fails() {
+    let (app, _pool, _my_dog, victim_dog) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    let payload = json!({
+        "dog_ids": [victim_dog], 
+        "service_type": "Boarding",
+        "start_date": "2030-01-01",
+        "end_date": "2030-01-05", 
+        "total_price": 100.0,
+        "notes": null,
+        "user_email": "ignored@test.com" 
+    });
+
+    let request = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_create_booking_valid_boarding() {
+    let (app, _pool, my_dog, _victim_dog) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    let payload = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-01-01",
+        "end_date": "2030-01-02", 
+        "total_price": 50.0,
+        "notes": null,
+        "user_email": "ignored@test.com"
+    });
+
+    let request = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+async fn test_boarding_requires_overnight() {
+    let (app, _pool, my_dog, _) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    let payload = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-01-01",
+        "end_date": "2030-01-01", 
+        "total_price": 50.0,
+        "notes": null,
+        "user_email": "ignored@test.com"
+    });
+
+    let request = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_security_injection_safe() {
+    let (app, _pool, my_dog, _) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    // Enterprise Security: Chaos Payload
+    // Attempting SQL Injection and XSS in the notes field
+    let malicious_note = "'; DROP TABLE users; -- <script>alert('hack')</script>";
+    
+    let payload = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-02-01",
+        "end_date": "2030-02-05", 
+        "total_price": 50.0,
+        "notes": malicious_note, 
+        "user_email": "ignored@test.com"
+    });
+
+    let request = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    
+    // Should pass (201) because SQLx creates safe parameterized queries. 
+    // It should NOT be 500 (Server Error) or affect the DB.
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+async fn test_rate_limiting_enforcement() {
+    let (app, _pool, _my_dog, victim_dog) = spawn_app().await;
+    let token = generate_token("test@user.com"); 
+
+    // Enterprise Stability: DDoS Simulation
+    // Limit is 100 per minute per IP. We send 110.
+    for i in 1..=110 {
+        let app_instance = app.clone(); 
+        
+        let payload = json!({
+            "dog_ids": [victim_dog], 
+            "service_type": "Boarding",
+            "start_date": "2030-01-01",
+            "end_date": "2030-01-05", 
+            "total_price": 100.0,
+            "notes": null
+        });
+
+        let request = Request::builder()
+            .uri("/api/bookings")
+            .method("POST")
+            .header("content-type", "application/json")
+            .header("authorization", format!("Bearer {}", token))
+            .header("x-real-ip", "1.2.3.4") 
+            .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+            .unwrap();
+
+        let response = app_instance.oneshot(request).await.unwrap();
+
+        if i <= 100 {
+            assert_ne!(response.status(), StatusCode::TOO_MANY_REQUESTS, "Request {} blocked prematurely", i);
+        } else {
+            assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS, "Rate limit failed to catch request {}", i);
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_booking_31_day_limit() {
+    let (app, _pool, my_dog, _) = spawn_app().await;
+    let token = generate_token("test@user.com");
+
+    // Attempting a 31-day stay (should fail)
+    let payload = json!({
+        "dog_ids": [my_dog],
+        "service_type": "Boarding",
+        "start_date": "2030-01-01",
+        "end_date": "2030-02-01", 
+        "total_price": 1500.0,
+        "notes": "Long stay",
+        "user_email": "test@user.com"
+    });
+
+    let request = Request::builder()
+        .uri("/api/bookings")
+        .method("POST")
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {}", token))
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_create_report_and_fetch() {
+    let (app, pool, my_dog, _) = spawn_app().await;
+    
+    // 1. Create a dummy booking to attach reports to
+    let booking_id = "test-booking-123";
+    query("INSERT INTO bookings (id, user_email, dog_id, status) VALUES ($1, $2, $3, 'confirmed')")
+        .bind(booking_id).bind("test@user.com").bind(my_dog).execute(&pool).await.unwrap();
+
+    // 2. Staff Pushes Report
+    let payload = json!({
+        "booking_id": booking_id,
+        "mood": "Energetic",
+        "activity": "Park Run",
+        "notes": "Had a blast!",
+        "ate_breakfast": "Yes",
+        "ate_dinner": "Pending",
+        "playtime_status": "High"
+    });
+
+    let request = Request::builder()
+        .uri("/api/reports")
+        .method("POST")
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // 3. Fetch Reports for the Booking
+    let get_request = Request::builder()
+        .uri(format!("/api/reports/{}", booking_id))
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
+
+    let get_response = app.oneshot(get_request).await.unwrap();
+    assert_eq!(get_response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(get_response.into_body(), usize::MAX).await.unwrap();
+    let reports: Vec<DailyReport> = serde_json::from_slice(&body).unwrap();
+    
+    assert_eq!(reports.len(), 1);
+    assert_eq!(reports[0].mood, "Energetic");
+    assert_eq!(reports[0].ate_breakfast, Some("Yes".to_string()));
+}
+
+#[tokio::test]
+async fn test_report_security_injection() {
+    let (app, _pool, _, _) = spawn_app().await;
+    
+    let payload = json!({
+        "booking_id": "any-id",
+        "mood": "Happy",
+        "activity": "Resting",
+        "notes": "<script>alert('xss')</script> -- SQLi attempt",
+        "ate_breakfast": "Yes"
+    });
+
+    let request = Request::builder()
+        .uri("/api/reports")
+        .method("POST")
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    
+    // Should pass (200) because we use parameterized queries.
+    // The frontend must still sanitize on render, but the API remains stable.
+    assert_eq!(response.status(), StatusCode::OK);
+}
