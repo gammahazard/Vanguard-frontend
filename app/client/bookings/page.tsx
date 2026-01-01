@@ -165,8 +165,14 @@ export default function BookingsView() {
         }
     };
 
-    const upcomingBookings = bookings.filter(b => b.status !== 'Completed' && b.status !== 'Cancelled');
-    const pastBookings = bookings.filter(b => b.status === 'Completed' || b.status === 'Cancelled');
+    const upcomingBookings = bookings.filter(b => {
+        const s = b.status?.toLowerCase();
+        return s !== 'completed' && s !== 'cancelled' && s !== 'declined';
+    });
+    const pastBookings = bookings.filter(b => {
+        const s = b.status?.toLowerCase();
+        return s === 'completed' || s === 'cancelled' || s === 'declined';
+    });
 
     // Check if a date is full
     const isDateFull = (dateStr: string) => availability.includes(dateStr);

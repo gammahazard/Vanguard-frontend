@@ -95,7 +95,10 @@ export default function ClientDashboard() {
                 setBalance(total);
 
                 const upcoming = bookings
-                    .filter((b: Booking) => b.status !== "completed" && b.status !== "cancelled")
+                    .filter((b: Booking) => {
+                        const s = b.status?.toLowerCase();
+                        return s !== "completed" && s !== "cancelled" && s !== "declined";
+                    })
                     .sort((a: Booking, b: Booking) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
                 if (upcoming.length > 0) {

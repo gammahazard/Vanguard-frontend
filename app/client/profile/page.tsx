@@ -322,6 +322,9 @@ export default function ProfileView() {
                                     <Typography variant="body2" sx={{ opacity: 0.6, fontFamily: 'monospace' }}>
                                         ID: {typeof window !== 'undefined' ? localStorage.getItem('vanguard_email')?.substring(0, 10).toUpperCase() : '---'}
                                     </Typography>
+                                    <Typography variant="caption" sx={{ color: 'rgba(212, 175, 55, 0.4)', display: 'block', mt: 0.5 }}>
+                                        Security Note: Identity tied to secure email
+                                    </Typography>
                                 </Box>
                                 <Avatar
                                     sx={{
