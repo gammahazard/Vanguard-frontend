@@ -57,6 +57,7 @@ export default function ClientDashboard() {
     const [userName, setUserName] = useState("Guest");
     const [navValue, setNavValue] = useState(0);
     const [balance, setBalance] = useState(0);
+    const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
     const [nextStay, setNextStay] = useState<Booking | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -224,10 +225,10 @@ export default function ClientDashboard() {
                                 overflowX: 'auto', pb: 1, mx: -2, px: 2, mt: 1,
                                 '::-webkit-scrollbar': { display: 'none' }
                             }}>
-                                <CamCard name="Camera 01 - Executive Wing" />
-                                <CamCard name="Camera 02 - Main Play Area" />
-                                <CamCard name="Camera 03 - Outdoor Run" />
-                                <CamCard name="Camera 04 - Nap Suite" />
+                                <CamCard name="Camera 01 - Executive Wing" onClick={() => setSelectedCamera("Camera 01 - Executive Wing")} />
+                                <CamCard name="Camera 02 - Main Play Area" onClick={() => setSelectedCamera("Camera 02 - Main Play Area")} />
+                                <CamCard name="Camera 03 - Outdoor Run" onClick={() => setSelectedCamera("Camera 03 - Outdoor Run")} />
+                                <CamCard name="Camera 04 - Nap Suite" onClick={() => setSelectedCamera("Camera 04 - Nap Suite")} />
                             </Stack>
                         </Box>
 
@@ -361,6 +362,42 @@ export default function ClientDashboard() {
 
             </Box>
 
+            {/* Camera Modal */}
+            <Dialog
+                open={!!selectedCamera}
+                onClose={() => setSelectedCamera(null)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: { bgcolor: '#000', borderRadius: 2, overflow: 'hidden' }
+                }}
+            >
+                <Box sx={{ position: 'relative', aspectRatio: '16/9', bgcolor: '#000' }}>
+                    <video
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                    >
+                        <source src="https://videos.pexels.com/video-files/5532785/5532785-sd_640_360_25fps.mp4" type="video/mp4" />
+                    </video>
+                    <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: 'rgba(0,0,0,0.6)', px: 1.5, py: 0.5, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 'bold' }}>{selectedCamera}</Typography>
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ef4444', ml: 1, animation: 'pulse 1.5s infinite' }} />
+                            <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.65rem' }}>LIVE</Typography>
+                        </Stack>
+                    </Box>
+                    <IconButton
+                        onClick={() => setSelectedCamera(null)}
+                        sx={{ position: 'absolute', top: 16, right: 16, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </Dialog>
+
             <Dialog
                 open={showUpsell}
                 onClose={(event, reason) => {
@@ -465,14 +502,18 @@ function HighlightCard({ icon, time, title, desc }: { icon: any, time: string, t
     );
 }
 
-function CamCard({ name }: { name: string }) {
+function CamCard({ name, onClick }: { name: string, onClick?: () => void }) {
     // Randomize slightly to avoid all videos syncing perfectly if we had multiple sources, 
     // but mainly here we just render the video.
     return (
-        <Paper sx={{
-            width: '100%', position: 'relative', overflow: 'hidden', borderRadius: 4,
-            border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9', bgcolor: '#000'
-        }}>
+        <Paper
+            onClick={onClick}
+            sx={{
+                width: '100%', position: 'relative', overflow: 'hidden', borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9', bgcolor: '#000',
+                cursor: 'pointer', transition: 'transform 0.2s',
+                '&:hover': { transform: 'scale(1.02)', borderColor: 'rgba(212, 175, 55, 0.3)' }
+            }}>
             {/* LIVE Badge */}
             <Box sx={{
                 position: 'absolute', top: 12, left: 12, zIndex: 2, display: 'flex', alignItems: 'center', gap: 1,
