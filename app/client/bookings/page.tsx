@@ -387,6 +387,7 @@ export default function BookingsView() {
                             <Box sx={{ py: 2, textAlign: 'center' }}>
                                 <Typography variant="h6">Ready to book?</Typography>
                                 <Typography variant="body2" color="text.secondary">VIPs: {pets.filter(p => formData.dog_ids.includes(p.id)).map(p => p.name).join(", ")}</Typography>
+                                <Typography variant="body2" color="text.secondary">Dates: {formData.start_date} to {formData.end_date}</Typography>
                                 <Typography variant="h4" sx={{ mt: 2, color: '#D4AF37' }}>${formData.total_price.toFixed(2)}</Typography>
                             </Box>
                         )}
