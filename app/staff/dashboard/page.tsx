@@ -85,6 +85,11 @@ export default function StaffDashboard() {
     const [clients, setClients] = useState<UserWithPets[]>([]);
     const [loadingBookings, setLoadingBookings] = useState(false);
     const [loadingClients, setLoadingClients] = useState(false);
+    const [stats, setStats] = useState([
+        { label: "Guests In House", value: "0", color: "primary.main" },
+        { label: "Check-Ins Today", value: "0", color: "text.primary" },
+        { label: "Departures", value: "0", color: "text.secondary" }
+    ]);
 
     // Optimized sorting for Directory: Unread messages first, then pet owners, then alphabetical
     const sortedDirectoryClients = useMemo(() => {
@@ -233,9 +238,27 @@ export default function StaffDashboard() {
                 setRecentBookings(groupedConfirmed.slice(0, 5));
 
                 // 4. Set Today's Arrivals (Confirmed only)
-                const todayStr = new Date().toDateString();
+                const today = new Date();
+                const todayStr = today.toDateString();
                 const arrivals = confirmed.filter((b: any) => new Date(b.start_date + 'T00:00:00').toDateString() === todayStr);
                 setTodaysArrivals(arrivals);
+
+                // 5. Calculate Real Stats
+                const guestsInHouse = confirmed.filter((b: any) => {
+                    const start = new Date(b.start_date + 'T00:00:00');
+                    const end = new Date(b.end_date + 'T00:00:00');
+                    // Normalize today to avoid time issues
+                    const todayDate = new Date(todayStr);
+                    return start <= todayDate && end >= todayDate;
+                }).length;
+
+                const departures = confirmed.filter((b: any) => new Date(b.end_date + 'T00:00:00').toDateString() === todayStr).length;
+
+                setStats([
+                    { label: "Guests In House", value: guestsInHouse.toString(), color: "primary.main" },
+                    { label: "Check-Ins Today", value: arrivals.length.toString(), color: "text.primary" },
+                    { label: "Departures", value: departures.toString(), color: "text.secondary" }
+                ]);
             }
         } catch (e) {
             console.error(e);
@@ -335,16 +358,17 @@ export default function StaffDashboard() {
         fetchClients();
     }, [fetchGuests, fetchPendingBookings, fetchClients, fetchStaff, fetchServices]);
 
-    // Periodic Refresh for Comms/Directory
+    // Periodic Refresh (Auto-Polling)
     useEffect(() => {
         const interval = setInterval(() => {
             fetchClients();
+            fetchPendingBookings(); // Poll for new requests
             if (viewMode === 'comms' && activeChat) {
                 fetchMessages(activeChat.email);
             }
         }, 10000); // 10s sync
         return () => clearInterval(interval);
-    }, [viewMode, activeChat, fetchClients, fetchMessages]);
+    }, [viewMode, activeChat, fetchClients, fetchMessages, fetchPendingBookings]);
 
     const markAsRead = async (email: string) => {
         try {
@@ -706,7 +730,7 @@ export default function StaffDashboard() {
                 {/* --- OPERATIONS VIEW --- */}
                 {viewMode === 'operations' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <OperationsStats />
+                        <OperationsStats stats={stats} />
                         <GuestList
                             guests={guests}
                             loading={loadingGuests}
@@ -727,7 +751,7 @@ export default function StaffDashboard() {
 
                             {/* Left Column: Real Stats */}
                             <Stack spacing={3}>
-                                <OperationsStats />
+                                <OperationsStats stats={stats} />
                             </Stack>
 
                             {/* Right Column: Staff Management */}
