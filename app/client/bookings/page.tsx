@@ -381,7 +381,12 @@ export default function BookingsView() {
                                     <Typography variant="h6">Ready to book?</Typography>
                                     <Typography variant="body2" color="text.secondary">VIPs: {pets.filter(p => formData.dog_ids.includes(p.id)).map(p => p.name).join(", ")}</Typography>
                                     <Typography variant="body2" color="text.secondary">Dates: {formData.start_date} to {formData.end_date}</Typography>
-                                    <Typography variant="h4" sx={{ mt: 2, color: '#D4AF37' }}>${formData.total_price.toFixed(2)}</Typography>
+                                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ mt: 2 }}>
+                                        <Typography variant="h4" sx={{ color: '#D4AF37' }}>${formData.total_price.toFixed(2)}</Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                            (${services.find(s => s.name === formData.service_type)?.price.toFixed(2) || '0.00'} / {formData.service_type === 'Daycare' ? 'day' : 'night'})
+                                        </Typography>
+                                    </Stack>
                                 </Box>
 
                                 <Paper sx={{ p: 2, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 2 }}>
