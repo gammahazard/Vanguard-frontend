@@ -11,9 +11,10 @@ interface GuestListProps {
     onPostReport: (pet: GuestPet) => void;
     onViewHistory: (pet: GuestPet) => void;
     onCheckOut: (pet: GuestPet) => void;
+    onGuestClick: (pet: GuestPet) => void;
 }
 
-export default function GuestList({ guests, loading, onToggleAction, onLogIncident, onPostReport, onViewHistory, onCheckOut }: GuestListProps) {
+export default function GuestList({ guests, loading, onToggleAction, onLogIncident, onPostReport, onViewHistory, onCheckOut, onGuestClick }: GuestListProps) {
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
             {loading ? (
@@ -26,14 +27,17 @@ export default function GuestList({ guests, loading, onToggleAction, onLogIncide
                 </Paper>
             ) : guests.map((guest) => (
                 <motion.div key={guest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <Paper sx={{
-                        overflow: 'hidden',
-                        borderRadius: 3,
-                        bgcolor: 'background.paper',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        transition: 'transform 0.2s',
-                        '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)' }
-                    }}>
+                    <Paper
+                        onClick={() => onGuestClick(guest)}
+                        sx={{
+                            overflow: 'hidden',
+                            borderRadius: 3,
+                            bgcolor: 'background.paper',
+                            cursor: 'pointer',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)' }
+                        }}>
                         {/* Card Content */}
                         <Box sx={{ position: 'relative', height: 160 }}>
                             <Box component="img" src={guest.img} alt={guest.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -53,19 +57,19 @@ export default function GuestList({ guests, loading, onToggleAction, onLogIncide
                                 </Stack>
                             )}
                             <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 1, borderRadius: 2 }}>
-                                <Tooltip title="Breakfast/Dinner"><IconButton onClick={() => onToggleAction(guest.id, 'fed')} sx={{ color: guest.fed ? '#22c55e' : 'text.disabled', bgcolor: guest.fed ? 'rgba(34, 197, 94, 0.1)' : 'transparent' }}><Restaurant fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Breakfast/Dinner"><IconButton onClick={(e) => { e.stopPropagation(); onToggleAction(guest.id, 'fed'); }} sx={{ color: guest.fed ? '#22c55e' : 'text.disabled', bgcolor: guest.fed ? 'rgba(34, 197, 94, 0.1)' : 'transparent' }}><Restaurant fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="Daily Playtime"><IconButton onClick={() => onToggleAction(guest.id, 'walked')} sx={{ color: guest.walked ? '#3b82f6' : 'text.disabled', bgcolor: guest.walked ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}><SportsTennis fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Daily Playtime"><IconButton onClick={(e) => { e.stopPropagation(); onToggleAction(guest.id, 'walked'); }} sx={{ color: guest.walked ? '#3b82f6' : 'text.disabled', bgcolor: guest.walked ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}><SportsTennis fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="Medication"><IconButton onClick={() => guest.meds !== null && onToggleAction(guest.id, 'meds')} disabled={guest.meds === null} sx={{ color: guest.meds ? '#a855f7' : (guest.meds === null ? 'rgba(255,255,255,0.05)' : 'text.disabled'), bgcolor: guest.meds ? 'rgba(168, 85, 247, 0.1)' : 'transparent' }}><Medication fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Medication"><IconButton onClick={(e) => { e.stopPropagation(); guest.meds !== null && onToggleAction(guest.id, 'meds'); }} disabled={guest.meds === null} sx={{ color: guest.meds ? '#a855f7' : (guest.meds === null ? 'rgba(255,255,255,0.05)' : 'text.disabled'), bgcolor: guest.meds ? 'rgba(168, 85, 247, 0.1)' : 'transparent' }}><Medication fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="Log Care Alert"><IconButton onClick={() => onLogIncident(guest)} sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><CrisisAlert fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Log Care Alert"><IconButton onClick={(e) => { e.stopPropagation(); onLogIncident(guest); }} sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><CrisisAlert fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="View History"><IconButton onClick={() => onViewHistory(guest)} sx={{ color: 'text.secondary', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}><History fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="View History"><IconButton onClick={(e) => { e.stopPropagation(); onViewHistory(guest); }} sx={{ color: 'text.secondary', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}><History fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="Daily Update"><IconButton onClick={() => onPostReport(guest)} sx={{ color: '#D4AF37', '&:hover': { bgcolor: 'rgba(212, 175, 55, 0.1)' } }}><AssignmentIcon fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Daily Update"><IconButton onClick={(e) => { e.stopPropagation(); onPostReport(guest); }} sx={{ color: '#D4AF37', '&:hover': { bgcolor: 'rgba(212, 175, 55, 0.1)' } }}><AssignmentIcon fontSize="small" /></IconButton></Tooltip>
                                 <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                                <Tooltip title="Check Out"><IconButton onClick={() => onCheckOut(guest)} sx={{ color: 'text.secondary', '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><ExitToApp fontSize="small" /></IconButton></Tooltip>
+                                <Tooltip title="Check Out"><IconButton onClick={(e) => { e.stopPropagation(); onCheckOut(guest); }} sx={{ color: 'text.secondary', '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}><ExitToApp fontSize="small" /></IconButton></Tooltip>
                             </Stack>
                         </Box>
                     </Paper>

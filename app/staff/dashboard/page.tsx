@@ -26,6 +26,7 @@ import {
     InputAdornment,
     Switch,
     Badge as MuiBadge,
+    Grid,
 
 } from "@mui/material";
 import {
@@ -76,7 +77,7 @@ import { GuestPet, UserWithPets, GroupedBookingRequest, EnrichedBooking, Message
 export default function StaffDashboard() {
     const [guests, setGuests] = useState<GuestPet[]>([]);
     const [loadingGuests, setLoadingGuests] = useState(true);
-    const [viewMode, setViewMode] = useState<'operations' | 'business' | 'requests' | 'directory' | 'comms'>('operations');
+    const [viewMode, setViewMode] = useState<'operations' | 'financials' | 'team' | 'requests' | 'directory' | 'comms'>('operations');
     const [isOwner, setIsOwner] = useState(false);
     const [message, setMessage] = useState({ text: "", severity: "info" as any, open: false });
 
@@ -275,7 +276,10 @@ export default function StaffDashboard() {
                 // 4. Set Today's Arrivals
                 const today = new Date();
                 const todayStr = today.toDateString();
-                const arrivals = confirmed.filter((b: any) => new Date(b.start_date + 'T00:00:00').toDateString() === todayStr);
+                const arrivals = confirmed.filter((b: any) => {
+                    const start = new Date(b.start_date + 'T00:00:00').toDateString();
+                    return (b.status === 'Confirmed' || b.status === 'Checked In') && start === todayStr;
+                });
                 setTodaysArrivals(arrivals);
 
                 // 5. Calculate Real Stats
@@ -752,7 +756,7 @@ export default function StaffDashboard() {
                             )}
                         </Stack>
                         <Typography variant="h4" fontWeight="bold" color="text.primary">
-                            {viewMode === 'operations' ? "Daily Run" : "Business Overview"}
+                            {viewMode === 'operations' ? "Daily Run" : viewMode === 'financials' ? "Financial Overview" : viewMode === 'team' ? "Team Command" : "Dashboard"}
                         </Typography>
                     </Box>
 
@@ -796,14 +800,24 @@ export default function StaffDashboard() {
                                 Comms
                             </Button>
                             {isOwner && (
-                                <Button
-                                    variant={viewMode === 'business' ? 'contained' : 'text'}
-                                    onClick={() => setViewMode('business')}
-                                    startIcon={<Dashboard />}
-                                    sx={{ borderRadius: 2.5, px: 2, fontSize: '0.8rem', color: viewMode === 'business' ? 'black' : 'text.secondary', bgcolor: viewMode === 'business' ? '#D4AF37' : 'transparent', '&:hover': { bgcolor: viewMode === 'business' ? '#D4AF37' : 'rgba(255,255,255,0.05)' } }}
-                                >
-                                    Command
-                                </Button>
+                                <>
+                                    <Button
+                                        variant={viewMode === 'financials' ? 'contained' : 'text'}
+                                        onClick={() => setViewMode('financials')}
+                                        startIcon={<AttachMoney />}
+                                        sx={{ borderRadius: 2.5, px: 2, fontSize: '0.8rem', color: viewMode === 'financials' ? 'black' : 'text.secondary', bgcolor: viewMode === 'financials' ? '#D4AF37' : 'transparent', '&:hover': { bgcolor: viewMode === 'financials' ? '#D4AF37' : 'rgba(255,255,255,0.05)' } }}
+                                    >
+                                        Financials
+                                    </Button>
+                                    <Button
+                                        variant={viewMode === 'team' ? 'contained' : 'text'}
+                                        onClick={() => setViewMode('team')}
+                                        startIcon={<Security />}
+                                        sx={{ borderRadius: 2.5, px: 2, fontSize: '0.8rem', color: viewMode === 'team' ? 'black' : 'text.secondary', bgcolor: viewMode === 'team' ? '#D4AF37' : 'transparent', '&:hover': { bgcolor: viewMode === 'team' ? '#D4AF37' : 'rgba(255,255,255,0.05)' } }}
+                                    >
+                                        Team
+                                    </Button>
+                                </>
                             )}
                             <IconButton onClick={() => setShowSettingsDialog(true)} sx={{ ml: 1, color: 'text.secondary', '&:hover': { color: 'white' } }}>
                                 <Settings />
@@ -837,115 +851,133 @@ export default function StaffDashboard() {
                             onPostReport={handleOpenReport}
                             onViewHistory={handleViewHistory}
                             onCheckOut={handleCheckOut}
+                            onGuestClick={(guest: GuestPet) => {
+                                const booking = allBookings.find(b => b.dog_id === guest.id);
+                                if (booking) {
+                                    const client = clients.find(c => c.id === booking.user_id);
+                                    if (client) {
+                                        setSelectedClient(client);
+                                        setShowPetModal(true);
+                                    }
+                                }
+                            }}
                         />
                     </motion.div>
                 )}
 
 
 
-                {/* --- BUSINESS OVERVIEW (COMMAND CENTER) --- */}
-                {viewMode === 'business' && (
+                {/* --- FINANCIAL OVERVIEW --- */}
+                {viewMode === 'financials' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <Stack spacing={3}>
-                            {/* Financial Dashboard */}
                             <BusinessDashboard bookings={allBookings} />
 
-                            {/* Left Column: Real Stats */}
-                            <Stack spacing={3}>
-                                <OperationsStats stats={stats} />
-                            </Stack>
-
-                            {/* Right Column: Staff Management */}
-                            <Stack spacing={3}>
-                                <Paper sx={{ flex: 1, p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Security sx={{ color: 'text.secondary' }} />
-                                            <Typography variant="h6" fontWeight="bold">My Team</Typography>
-                                        </Stack>
-                                        <Button startIcon={<PersonAdd />} size="small" variant="contained" onClick={() => setOpenAddStaff(true)} sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>
-                                            Add Staff
-                                        </Button>
-                                    </Stack>
-
-                                    <Stack spacing={2}>
-                                        {staffList.length === 0 ? (
-                                            <Typography variant="body2" color="text.secondary" textAlign="center">No staff found.</Typography>
-                                        ) : (
-                                            staffList.map((staff, i) => (
-                                                <Stack key={i} direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0,0,0,0.2)' }}>
-                                                    <Stack direction="row" spacing={2} alignItems="center">
-                                                        <Avatar sx={{ width: 32, height: 32, bgcolor: staff.role === 'owner' ? '#F59E0B' : '#3B82F6', fontSize: 12, fontWeight: 'bold' }}>{staff.name[0]}</Avatar>
-                                                        <Box>
-                                                            <Typography variant="body2" fontWeight="bold">{staff.name}</Typography>
-                                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{staff.role}</Typography>
-                                                        </Box>
-                                                    </Stack>
-                                                    <Stack direction="row" spacing={1} alignItems="center">
-                                                        <Chip label="Active" size="small" sx={{ height: 20, fontSize: 10, bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }} />
-                                                        {isOwner && staff.role !== 'owner' && (
-                                                            <IconButton size="small" color="error" onClick={() => handleDeleteStaff(staff.email)}>
-                                                                <Cancel sx={{ fontSize: 16 }} />
-                                                            </IconButton>
-                                                        )}
-                                                    </Stack>
-                                                </Stack>
-                                            ))
-                                        )}
-                                    </Stack>
-                                </Paper>
-
-                                <Paper
-                                    onClick={() => window.location.href = '/staff/audit'}
-                                    sx={{
-                                        p: 3,
-                                        borderRadius: 3,
-                                        bgcolor: 'rgba(239, 68, 68, 0.05)',
-                                        border: '1px solid rgba(239, 68, 68, 0.1)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)', transform: 'translateY(-2px)' }
-                                    }}
-                                >
-                                    <Stack direction="row" spacing={2} alignItems="center">
-                                        <Warning color="error" />
-                                        <Box>
-                                            <Typography variant="subtitle2" fontWeight="bold" color="error">System Alert</Typography>
-                                            <Typography variant="caption" color="text.secondary">3 failed login attempts blocked from IP 192.168.1.45</Typography>
-                                        </Box>
-                                    </Stack>
-                                </Paper>
-
-                                {/* Global Comms Shortcut */}
-                                <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                                        <MessageIcon sx={{ color: 'text.secondary' }} />
-                                        <Typography variant="h6" fontWeight="bold">Global Comms</Typography>
-                                    </Stack>
-                                    <Typography variant="body2" color="text.secondary" mb={2}>
-                                        View, filter, and audit all client-staff communication logs.
-                                    </Typography>
-                                    <Button
-                                        fullWidth
-                                        variant="outlined"
-                                        onClick={() => window.location.href = '/staff/comms'}
-                                        sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.primary', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.05)' } }}
-                                    >
-                                        Open Black Box
-                                    </Button>
-                                </Paper>
-                            </Stack>
+                            {isOwner && (
+                                <Box sx={{ mt: 2 }}>
+                                    <ServiceManager
+                                        services={services}
+                                        loading={loadingServices}
+                                        onUpdatePrice={handleUpdatePrice}
+                                    />
+                                </Box>
+                            )}
                         </Stack>
+                    </motion.div>
+                )}
 
-                        {isOwner && (
-                            <Box sx={{ mt: 6 }}>
-                                <ServiceManager
-                                    services={services}
-                                    loading={loadingServices}
-                                    onUpdatePrice={handleUpdatePrice}
-                                />
-                            </Box>
-                        )}
+                {/* --- TEAM COMMAND --- */}
+                {viewMode === 'team' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <Grid container spacing={3}>
+                            <Grid xs={12} md={8}>
+                                <Stack spacing={3}>
+                                    {/* Staff Management */}
+                                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <Security sx={{ color: 'text.secondary' }} />
+                                                <Typography variant="h6" fontWeight="bold">My Team</Typography>
+                                            </Stack>
+                                            <Button startIcon={<PersonAdd />} size="small" variant="contained" onClick={() => setOpenAddStaff(true)} sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>
+                                                Add Staff
+                                            </Button>
+                                        </Stack>
+
+                                        <Stack spacing={2}>
+                                            {staffList.length === 0 ? (
+                                                <Typography variant="body2" color="text.secondary" textAlign="center">No staff found.</Typography>
+                                            ) : (
+                                                staffList.map((staff, i) => (
+                                                    <Stack key={i} direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0,0,0,0.2)' }}>
+                                                        <Stack direction="row" spacing={2} alignItems="center">
+                                                            <Avatar sx={{ width: 32, height: 32, bgcolor: staff.role === 'owner' ? '#F59E0B' : '#3B82F6', fontSize: 12, fontWeight: 'bold' }}>{staff.name[0]}</Avatar>
+                                                            <Box>
+                                                                <Typography variant="body2" fontWeight="bold">{staff.name}</Typography>
+                                                                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{staff.role}</Typography>
+                                                            </Box>
+                                                        </Stack>
+                                                        <Stack direction="row" spacing={1} alignItems="center">
+                                                            <Chip label="Active" size="small" sx={{ height: 20, fontSize: 10, bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }} />
+                                                            {isOwner && staff.role !== 'owner' && (
+                                                                <IconButton size="small" color="error" onClick={() => handleDeleteStaff(staff.email)}>
+                                                                    <Cancel sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                            )}
+                                                        </Stack>
+                                                    </Stack>
+                                                ))
+                                            )}
+                                        </Stack>
+                                    </Paper>
+                                </Stack>
+                            </Grid>
+
+                            <Grid xs={12} md={4}>
+                                <Stack spacing={3}>
+                                    {/* Security Alerts */}
+                                    <Paper
+                                        onClick={() => window.location.href = '/staff/audit'}
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 3,
+                                            bgcolor: 'rgba(239, 68, 68, 0.05)',
+                                            border: '1px solid rgba(239, 68, 68, 0.1)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)', transform: 'translateY(-2px)' }
+                                        }}
+                                    >
+                                        <Stack direction="row" spacing={2} alignItems="center">
+                                            <Warning color="error" />
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight="bold" color="error">System Alert</Typography>
+                                                <Typography variant="caption" color="text.secondary">3 failed login attempts blocked from IP 192.168.1.45</Typography>
+                                            </Box>
+                                        </Stack>
+                                    </Paper>
+
+                                    {/* Global Comms Shortcut */}
+                                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+                                            <MessageIcon sx={{ color: 'text.secondary' }} />
+                                            <Typography variant="h6" fontWeight="bold">Global Comms</Typography>
+                                        </Stack>
+                                        <Typography variant="body2" color="text.secondary" mb={2}>
+                                            View, filter, and audit all client-staff communication logs.
+                                        </Typography>
+                                        <Button
+                                            fullWidth
+                                            variant="outlined"
+                                            onClick={() => window.location.href = '/staff/comms'}
+                                            sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.primary', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.05)' } }}
+                                        >
+                                            Open Black Box
+                                        </Button>
+                                    </Paper>
+                                </Stack>
+                            </Grid>
+                        </Grid>
                     </motion.div>
                 )}
 
@@ -1399,7 +1431,7 @@ export default function StaffDashboard() {
                                     fullWidth
                                     variant="contained"
                                     startIcon={<AttachMoney />}
-                                    onClick={() => { setViewMode('business'); setShowSettingsDialog(false); }}
+                                    onClick={() => { setViewMode('financials'); setShowSettingsDialog(false); }}
                                     sx={{ bgcolor: '#D4AF37', color: 'black', '&:hover': { bgcolor: '#b5932b' }, fontWeight: 'bold' }}
                                 >
                                     Manage Rates & Pricing
