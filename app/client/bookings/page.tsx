@@ -49,6 +49,8 @@ export default function BookingsView() {
         total_price: 0
     });
 
+    const [useCapital, setUseCapital] = useState(false);
+
     const [agreements, setAgreements] = useState({
         cancel: false,
         noshow: false,
@@ -129,6 +131,19 @@ export default function BookingsView() {
             });
 
             if (res.ok) {
+                // SIMULATION: Log Capital Transaction if used
+                if (useCapital) {
+                    const tx = {
+                        id: `tx_${Date.now()}`,
+                        date: new Date().toISOString(),
+                        amount: formData.total_price,
+                        description: `${formData.service_type} Booking (Capital)`,
+                        user: email
+                    };
+                    const existing = JSON.parse(localStorage.getItem('vanguard_capital_txs') || '[]');
+                    localStorage.setItem('vanguard_capital_txs', JSON.stringify([tx, ...existing]));
+                }
+
                 setSuccessMsg("Reservation confirmed! 🍾");
                 setShowWizard(false);
                 setActiveStep(0);
@@ -153,7 +168,7 @@ export default function BookingsView() {
         try {
             const res = await authenticatedFetch(`${API_BASE_URL}/api/bookings/${bookingToCancel.id}`, {
                 method: 'PUT',
-                body: JSON.stringify({ status: "Cancelled" })
+                body: JSON.stringify({ status: "cancelled" })
             });
 
             if (res.ok) {
@@ -425,6 +440,23 @@ export default function BookingsView() {
                                         </Stack>
                                     </Stack>
                                 </Paper>
+
+                                <Box sx={{ mt: 3, p: 2, borderRadius: 2, bgcolor: useCapital ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255,255,255,0.02)', border: useCapital ? '1px solid #D4AF37' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} onClick={() => setUseCapital(!useCapital)}>
+                                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                        <Stack direction="row" spacing={2} alignItems="center">
+                                            <Box sx={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid', borderColor: useCapital ? '#D4AF37' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {useCapital && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#D4AF37' }} />}
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="body2" fontWeight="bold" color={useCapital ? '#D4AF37' : 'text.primary'}>Pay with Available Capital</Typography>
+                                                <Typography variant="caption" color="text.secondary">Balance: $25,000.00</Typography>
+                                            </Box>
+                                        </Stack>
+                                        <Typography variant="body2" fontWeight="bold" sx={{ color: useCapital ? '#D4AF37' : 'text.secondary' }}>
+                                            -${formData.total_price.toFixed(2)}
+                                        </Typography>
+                                    </Stack>
+                                </Box>
                             </Box>
                         )}
                     </DialogContent>
