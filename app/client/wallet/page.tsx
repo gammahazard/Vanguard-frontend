@@ -182,8 +182,13 @@ export default function WalletView() {
     };
 
     const cryptoAssets = [
-        { name: "USDC", full: "USD Coin", icon: <Diamond sx={{ color: '#2775ca' }} />, price: "$1.00", balance: "0.00", address: "0x742d...44e" },
+        { name: "USDC", full: "USD Coin", price: "$1.00", balance: "0.00", address: "0x742d...44e" },
     ];
+
+    const getCoinIcon = (name: string) => {
+        if (name === 'USDC') return <Diamond sx={{ color: '#2775ca' }} />;
+        return <CurrencyBitcoin sx={{ color: '#f7931a' }} />;
+    };
 
     return (
         <ThemeProvider theme={theme}>
@@ -328,7 +333,7 @@ export default function WalletView() {
                                                 {/* Asset Info */}
                                                 <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
                                                     <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                                        {coin.icon}
+                                                        {getCoinIcon(coin.name)}
                                                     </Avatar>
                                                     <Box>
                                                         <Typography variant="body2" fontWeight="900">{coin.name}</Typography>
