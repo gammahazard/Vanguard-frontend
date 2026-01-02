@@ -19,6 +19,7 @@ import {
     Collapse,
     Badge,
     Dialog,
+    DialogTitle,
     DialogContent,
     DialogActions,
     Divider,
@@ -79,6 +80,7 @@ export default function ClientDashboard() {
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
     const [paying, setPaying] = useState(false);
     const [paymentFeedback, setPaymentFeedback] = useState({ open: false, text: "", severity: "success" as "success" | "error" });
+    const [confirmPayment, setConfirmPayment] = useState<{ open: boolean, booking: Booking | null, amount: number, tax: number } | null>(null);
 
     useEffect(() => {
         const storedName = typeof window !== 'undefined' ? localStorage.getItem('vanguard_user') : null;
@@ -170,17 +172,32 @@ export default function ClientDashboard() {
         }
     };
 
-    const handlePayBooking = async (bookingId: string) => {
+    const handlePayBooking = (booking: Booking) => {
+        const isCancellation = ['cancelled', 'no-show', 'no show'].includes((booking.status || '').toLowerCase());
+        const tax = isCancellation ? 0 : booking.total_price * 0.13;
+
+        setConfirmPayment({
+            open: true,
+            booking: booking,
+            amount: booking.total_price + tax,
+            tax: tax
+        });
+    };
+
+    const executePayment = async () => {
+        if (!confirmPayment?.booking) return;
+
         setPaying(true);
         try {
             const res = await authenticatedFetch(`/api/wallet/pay`, {
                 method: 'POST',
-                body: JSON.stringify({ booking_id: bookingId })
+                body: JSON.stringify({ booking_id: confirmPayment.booking.id })
             });
 
             if (res.ok) {
                 const data = await res.json();
                 setPaymentFeedback({ open: true, text: data.message || "Payment Successful!", severity: "success" });
+                setConfirmPayment(null);
                 fetchDashboardData();
             } else {
                 const err = await res.json();
@@ -728,7 +745,7 @@ export default function ClientDashboard() {
                                                 variant="contained"
                                                 size="small"
                                                 disabled={paying || walletBalance < grandTotal}
-                                                onClick={() => handlePayBooking(b.id)}
+                                                onClick={() => handlePayBooking(b)}
                                                 sx={{
                                                     bgcolor: 'primary.main',
                                                     color: 'background.default',
@@ -765,6 +782,68 @@ export default function ClientDashboard() {
             </Dialog>
 
             {/* --- FEEDBACK SNACKBAR --- */}
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={!!confirmPayment?.open}
+                onClose={() => !paying && setConfirmPayment(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: { borderRadius: 3, p: 1 }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 'bold', pb: 1 }}>Confirm Payment</DialogTitle>
+                <DialogContent>
+                    {confirmPayment?.booking && (
+                        <Stack spacing={2} sx={{ pt: 1 }}>
+                            <Typography variant="body1">
+                                You are settling a balance for <strong>{confirmPayment.booking.dog_name || 'Pet'}</strong>.
+                            </Typography>
+
+                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)' }}>
+                                <Stack spacing={1}>
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Typography color="text.secondary" variant="body2">Service</Typography>
+                                        <Typography variant="body2" fontWeight="medium">{confirmPayment.booking.service_type}</Typography>
+                                    </Stack>
+                                    <Divider sx={{ borderStyle: 'dashed' }} />
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Typography color="text.secondary">Subtotal</Typography>
+                                        <Typography>${confirmPayment.booking.total_price.toFixed(2)}</Typography>
+                                    </Stack>
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Typography color="text.secondary">HST (13%)</Typography>
+                                        <Typography>${confirmPayment.tax.toFixed(2)}</Typography>
+                                    </Stack>
+                                    <Divider />
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography fontWeight="bold">Total Charge</Typography>
+                                        <Typography fontWeight="bold" color="primary.main" variant="h6">
+                                            ${confirmPayment.amount.toFixed(2)}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
+                            </Paper>
+
+                            <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
+                                This amount will be deducted from your wallet immediately.
+                            </Alert>
+                        </Stack>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setConfirmPayment(null)} disabled={paying} sx={{ color: 'text.secondary' }}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={executePayment}
+                        disabled={paying}
+                        autoFocus
+                    >
+                        {paying ? <CircularProgress size={24} color="inherit" /> : `Confirm Pay`}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Snackbar
                 open={paymentFeedback.open}
                 autoHideDuration={6000}

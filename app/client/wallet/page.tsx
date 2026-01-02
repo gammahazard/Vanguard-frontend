@@ -428,39 +428,38 @@ export default function WalletView() {
                                             {/* Real Paid Bookings */}
                                             {paidBookings.length > 0 ? (
                                                 paidBookings.map((b) => {
-                                                    // Calculate the grand total (Amount + Tax) the user paid
-                                                    // If it was marked paid by staff manually without price adjustment, we assume full price + tax was settled.
-                                                    // If it was a No Show / Late Cancel, the total_price stored is the fee.
-                                                    // We add tax only if it wasn't a flat fee (Fees usually include tax or are exempt? Assuming Add Tax for consistency unless standard).
-                                                    // Actually, for No Show ($20) / Cancel ($45), let's assume that IS the charge.
-                                                    // For clear "Services", it's Price * 1.13.
-
                                                     let amount = b.total_price;
+                                                    let tax = 0;
                                                     let title = `${b.service_type} (${b.dog_name || 'Pet'})`;
 
-                                                    // If it's a standard booking (not a fee), add the tax representation
-                                                    // A heuristic: if status is 'Completed' or 'Checked In' or 'Confirmed' and price > 50, likely standard.
-                                                    // But cleaner is just to consistently show what they "would have paid".
-                                                    // Since we don't store transaction records separately yet, we reconstruct it.
+                                                    const status = (b.status || '').toLowerCase();
+                                                    const isPenalty = ['cancelled', 'no-show', 'no show'].includes(status);
 
-                                                    // If it's a penalty fee ($20 or $45), we display that flat.
-                                                    if (amount === 20 || amount === 45) {
-                                                        title = amount === 20 ? "No Show Fee" : "Late Cancellation Fee";
+                                                    if (isPenalty) {
+                                                        title = status.includes('no') ? "No-Show Fee" : "Cancellation Fee";
+                                                        // Penalties are flat fees, tax included/exempt (0 displayed)
                                                     } else {
-                                                        amount = amount * 1.13; // Add HST for display
+                                                        // Standard service: Add 13% tax for display to match valid payment
+                                                        tax = amount * 0.13;
+                                                        amount = amount + tax;
                                                     }
 
                                                     return (
                                                         <HistoryItem
                                                             key={b.id}
                                                             title={title}
-                                                            date={formatDateTimeEST(b.end_date).split(',')[0]} // Use end date as "Billed Date"
+                                                            date={formatDateTimeEST(b.end_date).split(',')[0]}
                                                             amount={`- $${amount.toFixed(2)}`}
+                                                            isPenalty={isPenalty}
                                                             onClick={() => setSelectedTx({
                                                                 title,
                                                                 date: formatDateTimeEST(b.end_date),
                                                                 amount: `- $${amount.toFixed(2)}`,
-                                                                booking: b
+                                                                subtotal: b.total_price,
+                                                                tax: tax,
+                                                                isPositive: false,
+                                                                booking: b,
+                                                                isPenalty
                                                             })}
                                                         />
                                                     );
@@ -717,20 +716,38 @@ export default function WalletView() {
 
                             {selectedTx?.booking && (
                                 <Paper variant="outlined" sx={{ p: 2, textAlign: 'left', bgcolor: 'rgba(0,0,0,0.2)', mb: 3 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight="bold">BOOKING DETAILS</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight="bold">RECEIPT DETAILS</Typography>
+
                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
                                         <Typography variant="body2">Service:</Typography>
-                                        <Typography variant="body2" fontWeight="bold">{selectedTx.booking.service_type}</Typography>
+                                        <Typography variant="body2" fontWeight="medium">{selectedTx.booking.service_type}</Typography>
                                     </Stack>
-                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-                                        <Typography variant="body2">Status:</Typography>
-                                        <Chip label={selectedTx.booking.status} size="small" color={selectedTx.booking.status.toLowerCase() === 'cancelled' ? 'error' : 'default'} sx={{ height: 20, fontSize: '0.7rem' }} />
-                                    </Stack>
-                                    {!selectedTx.booking.is_paid && (
-                                        <Alert severity="warning" icon={false} sx={{ mt: 2, py: 0 }}>
-                                            <Typography variant="caption" color="warning.main" fontWeight="bold">Payment Pending</Typography>
+
+                                    {selectedTx.isPenalty ? (
+                                        <Alert severity="error" icon={<PriorityHigh fontSize="small" />} sx={{ mt: 1, py: 0, fontSize: '0.75rem' }}>
+                                            Penalty Fee (No Tax Applied)
                                         </Alert>
+                                    ) : (
+                                        <>
+                                            <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                                            <Stack direction="row" justifyContent="space-between">
+                                                <Typography color="text.secondary" variant="body2">Subtotal</Typography>
+                                                <Typography variant="body2">${selectedTx.subtotal?.toFixed(2)}</Typography>
+                                            </Stack>
+                                            <Stack direction="row" justifyContent="space-between">
+                                                <Typography color="text.secondary" variant="body2">HST (13%)</Typography>
+                                                <Typography variant="body2">${selectedTx.tax?.toFixed(2)}</Typography>
+                                            </Stack>
+                                        </>
                                     )}
+
+                                    <Divider sx={{ my: 1 }} />
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Typography variant="body2" fontWeight="bold">Total Paid</Typography>
+                                        <Typography variant="body2" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                                            {selectedTx.amount.replace('- ', '')}
+                                        </Typography>
+                                    </Stack>
                                 </Paper>
                             )}
 
@@ -745,7 +762,7 @@ export default function WalletView() {
     );
 }
 
-function HistoryItem({ title, date, amount, isPositive, onClick }: any) {
+function HistoryItem({ title, date, amount, isPositive, isPenalty, onClick }: any) {
     return (
         <Paper
             onClick={onClick}
@@ -761,11 +778,14 @@ function HistoryItem({ title, date, amount, isPositive, onClick }: any) {
         >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{ bgcolor: isPositive ? 'rgba(74, 222, 128, 0.1)' : 'rgba(255,255,255,0.05)', color: isPositive ? '#4ade80' : 'inherit' }}>
-                        {isPositive ? <Add /> : <AccountBalanceWallet />}
+                    <Avatar sx={{
+                        bgcolor: isPositive ? 'rgba(74, 222, 128, 0.1)' : (isPenalty ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)'),
+                        color: isPositive ? '#4ade80' : (isPenalty ? '#ef4444' : 'inherit')
+                    }}>
+                        {isPositive ? <Add /> : (isPenalty ? <PriorityHigh /> : <AccountBalanceWallet />)}
                     </Avatar>
                     <Box>
-                        <Typography variant="body2" fontWeight="bold">{title}</Typography>
+                        <Typography variant="body2" fontWeight="bold" sx={{ color: isPenalty ? '#ef4444' : 'inherit' }}>{title}</Typography>
                         <Typography variant="caption" color="text.secondary">{date}</Typography>
                     </Box>
                 </Stack>
