@@ -24,6 +24,7 @@ export const authenticatedFetch = async (endpoint: string, options: FetchOptions
 
     try {
         const response = await fetch(url, {
+            cache: 'no-store', // Ensure we never use browser HTTP cache for data
             ...options,
             headers,
         });
