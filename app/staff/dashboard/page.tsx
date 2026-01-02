@@ -871,6 +871,7 @@ export default function StaffDashboard() {
                             onViewHistory={handleViewHistory}
                             onCheckOut={handleCheckOut}
                             onGuestClick={(guest: GuestPet) => {
+                                setSelectedPet(guest);
                                 const booking = allBookings.find(b => b.dog_id === guest.id);
                                 if (booking) {
                                     const client = clients.find(c => c.email === booking.user_email);
@@ -1570,7 +1571,15 @@ export default function StaffDashboard() {
                             </TextField>
                         </Stack>
 
-                        <Box sx={{ border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 2, p: 2, textAlign: 'center' }}>
+                        <Box sx={{
+                            border: '2px dashed rgba(212, 175, 55, 0.3)',
+                            borderRadius: 4,
+                            p: 3,
+                            textAlign: 'center',
+                            bgcolor: 'rgba(212, 175, 55, 0.05)',
+                            transition: 'all 0.2s',
+                            '&:hover': { borderColor: '#D4AF37', bgcolor: 'rgba(212, 175, 55, 0.1)' }
+                        }}>
                             <input
                                 accept="image/*"
                                 style={{ display: 'none' }}
@@ -1579,10 +1588,25 @@ export default function StaffDashboard() {
                                 onChange={handleFileUpload}
                             />
                             <label htmlFor="raised-button-file">
-                                <Button component="span" startIcon={uploading ? <CircularProgress size={20} /> : <AddAPhoto />} disabled={uploading} sx={{ color: 'text.secondary' }}>
-                                    {uploading ? "Uploading..." : "Upload Photo (Moment)"}
+                                <Button
+                                    component="span"
+                                    variant="contained"
+                                    startIcon={uploading ? <CircularProgress size={20} /> : <AddAPhoto />}
+                                    disabled={uploading}
+                                    sx={{
+                                        bgcolor: '#D4AF37',
+                                        color: 'black',
+                                        fontWeight: 'bold',
+                                        px: 4,
+                                        '&:hover': { bgcolor: '#b5932b' }
+                                    }}
+                                >
+                                    {uploading ? "Uploading..." : "SNAP A PHOTO (MOMENT)"}
                                 </Button>
                             </label>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, opacity: 0.6 }}>
+                                Moments appear in the client's Living Feed
+                            </Typography>
                             {reportData.image_url && (
                                 <Box sx={{ mt: 2, position: 'relative', width: '100%', height: 200 }}>
                                     <Image
