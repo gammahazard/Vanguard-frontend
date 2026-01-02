@@ -48,7 +48,8 @@ import {
     Add,
     Security,
     Close as CloseIcon,
-    Check as CheckIcon
+    Check as CheckIcon,
+    PriorityHigh
 } from "@mui/icons-material";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
@@ -686,23 +687,38 @@ export default function ClientDashboard() {
                                             }}
                                         >
                                             <Box>
-                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                                                        {b.dog_name || "Pet"} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
-                                                            {formatDateTimeEST(b.start_date).split(',')[0]} - {formatDateTimeEST(b.end_date).split(',')[0]} ({nights} nights)
-                                                        </span>
-                                                    </Typography>
-                                                    <Chip label={b.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
-                                                </Stack>
-
-                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                                                    {new Date(b.start_date).toLocaleDateString()} - {new Date(b.end_date).toLocaleDateString()} • <strong>{nights} Nights</strong>
-                                                </Typography>
-
-                                                <Stack direction="row" spacing={2} sx={{ mt: 1, opacity: 0.8 }}>
-                                                    <Typography variant="caption">Subtotal: ${b.total_price.toFixed(2)}</Typography>
-                                                    <Typography variant="caption">HST (13%): ${tax.toFixed(2)}</Typography>
-                                                </Stack>
+                                                {['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase()) ? (
+                                                    <>
+                                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <PriorityHigh sx={{ fontSize: 16 }} />
+                                                            {(b.status || '').toLowerCase().includes('no') ? 'No-Show Fee' : 'Cancellation Fee'}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
+                                                            {(b.status || '').toLowerCase().includes('no')
+                                                                ? `Missed appointment fee for ${b.service_type} on ${new Date(b.start_date).toLocaleDateString()}.`
+                                                                : `Fee for cancelled ${b.service_type} stay reserved for ${new Date(b.start_date).toLocaleDateString()}.`
+                                                            }
+                                                        </Typography>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                                            <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                                                                {b.dog_name || "Pet"} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
+                                                                    {formatDateTimeEST(b.start_date).split(',')[0]} - {formatDateTimeEST(b.end_date).split(',')[0]} ({nights} nights)
+                                                                </span>
+                                                            </Typography>
+                                                            <Chip label={b.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                                                        </Stack>
+                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                                                            {new Date(b.start_date).toLocaleDateString()} - {new Date(b.end_date).toLocaleDateString()} • <strong>{nights} Nights</strong>
+                                                        </Typography>
+                                                        <Stack direction="row" spacing={2} sx={{ mt: 1, opacity: 0.8 }}>
+                                                            <Typography variant="caption">Subtotal: ${b.total_price.toFixed(2)}</Typography>
+                                                            <Typography variant="caption">HST (13%): ${tax.toFixed(2)}</Typography>
+                                                        </Stack>
+                                                    </>
+                                                )}
                                                 <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
                                                     Total Due: ${grandTotal.toFixed(2)}
                                                 </Typography>
