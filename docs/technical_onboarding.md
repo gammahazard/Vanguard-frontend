@@ -139,27 +139,25 @@ cargo run
 
 **Architecture**: 
 *   **Frontend**: Hosted on GitHub. Auto-deploys to Vercel via Git Push.
-*   **Backend**: Hosted on Linode. Deployed via manual SCP.
-*   **Repo Structure**: Separate repos. NOT a monorepo.
+*   **Backend**: Managed via manual secure copy to Linode.
 
 **1. Deploy Backend (Linode)**:
-*   The AI Assistant will edit files locally.
-*   **YOU (The User)** must push them to the server manually using SCP.
-```bash
-# Upload Source (Run from project root)
-scp -r ./backend/src ./backend/Cargo.toml ./backend/Cargo.lock root@YOUR_SERVER_IP:~/backend/
+*   Deployment is handled manually via SCP. 
+*   Consult internal team notes for server IPs and specific paths.
 
-# Build & Restart (SSH into server)
-ssh root@YOUR_SERVER_IP "cd backend && cargo build --release && systemctl restart vanguard"
+**Build & Restart (SSH into server)**:
+```bash
+# Standard Build Workflow
+cd kennel-platform/backend && cargo build --release && systemctl restart vanguard
 ```
 
 **2. Deploy Frontend (Vercel)**:
-*   The AI Assistant commits changes locally.
-*   **YOU (The User)** must push to GitHub.
-```bash
-cd frontend
-git push origin main
-```
+*   Pushes to `main` trigger automatic Vercel production builds.
+1. `cd frontend`
+2. `git add .`
+3. `git commit -m "Update message"`
+4. `git push origin main`
+
 
 **3. The "Nuclear" Option (Database Reset)**:
 *   Use this to wipe all data and restore clean Demo Data (Users/Bookings).
