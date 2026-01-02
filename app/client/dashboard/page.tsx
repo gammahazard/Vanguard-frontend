@@ -840,43 +840,64 @@ export default function ClientDashboard() {
                                                 bgcolor: 'rgba(255,255,255,0.02)',
                                                 borderColor: 'rgba(255,255,255,0.1)',
                                                 display: 'flex',
+                                                flexDirection: { xs: 'column', sm: 'row' },
                                                 justifyContent: 'space-between',
-                                                alignItems: 'center'
+                                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                                gap: 2
                                             }}
                                         >
-                                            <Box>
-                                                {hasPenalty ? (
-                                                    <>
-                                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <PriorityHigh sx={{ fontSize: 16 }} />
-                                                            {representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION PENALTY" : "NO-SHOW PENALTY"}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
-                                                            <strong>{representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION AFTER SPOTS WERE RESERVED" : "NO-SHOW FEE"}</strong>
-                                                            <br />
-                                                            Fees for {names} ({representative.service_type}) on {new Date(representative.start_date).toLocaleDateString()}.
-                                                        </Typography>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                                                                {names} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
-                                                                    {formatDateTimeEST(representative.start_date).split(',')[0]} - {formatDateTimeEST(representative.end_date).split(',')[0]} ({nights} nights)
-                                                                </span>
+                                            <Stack direction="row" spacing={2} alignItems="center">
+                                                <Stack direction="row" spacing={-1.5}>
+                                                    {group.map((b, i) => (
+                                                        <Avatar
+                                                            key={b.id}
+                                                            src={b.dog_photo_url ? (b.dog_photo_url.startsWith('http') ? b.dog_photo_url : `${API_BASE_URL}${b.dog_photo_url}`) : ""}
+                                                            sx={{
+                                                                width: 44,
+                                                                height: 44,
+                                                                border: '2px solid rgba(212, 175, 55, 0.5)',
+                                                                bgcolor: 'rgba(255,255,255,0.05)',
+                                                                zIndex: 10 - i
+                                                            }}
+                                                        >
+                                                            <Pets sx={{ fontSize: 20, color: 'primary.main' }} />
+                                                        </Avatar>
+                                                    ))}
+                                                </Stack>
+                                                <Box>
+                                                    {hasPenalty ? (
+                                                        <>
+                                                            <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <PriorityHigh sx={{ fontSize: 16 }} />
+                                                                {representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION PENALTY" : "NO-SHOW PENALTY"}
                                                             </Typography>
-                                                            <Chip label={representative.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
-                                                        </Stack>
-                                                        <Stack direction="row" spacing={2} sx={{ mt: 1, opacity: 0.8 }}>
-                                                            <Typography variant="caption">Subtotal: ${groupSubtotal.toFixed(2)}</Typography>
-                                                            <Typography variant="caption">HST (13%): ${groupTax.toFixed(2)}</Typography>
-                                                        </Stack>
-                                                    </>
-                                                )}
-                                                <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
-                                                    Total Due: ${groupTotal.toFixed(2)}
-                                                </Typography>
-                                            </Box>
+                                                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
+                                                                <strong>{representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION AFTER SPOTS WERE RESERVED" : "NO-SHOW FEE"}</strong>
+                                                                <br />
+                                                                Fees for {names} ({representative.service_type}) on {new Date(representative.start_date).toLocaleDateString()}.
+                                                            </Typography>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                                <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                                                                    {names} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
+                                                                        {formatDateTimeEST(representative.start_date).split(',')[0]} - {formatDateTimeEST(representative.end_date).split(',')[0]} ({nights} nights)
+                                                                    </span>
+                                                                </Typography>
+                                                                <Chip label={representative.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                                                            </Stack>
+                                                            <Stack direction="row" spacing={2} sx={{ mt: 1, opacity: 0.8 }}>
+                                                                <Typography variant="caption">Subtotal: ${groupSubtotal.toFixed(2)}</Typography>
+                                                                <Typography variant="caption">HST (13%): ${groupTax.toFixed(2)}</Typography>
+                                                            </Stack>
+                                                        </>
+                                                    )}
+                                                    <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
+                                                        Total Due: ${groupTotal.toFixed(2)}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
 
                                             <Button
                                                 variant="contained"

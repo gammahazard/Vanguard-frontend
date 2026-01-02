@@ -503,6 +503,7 @@ export default function WalletView() {
                                                         amount={tx.amount}
                                                         isPositive={tx.isPositive}
                                                         isPenalty={tx.isPenalty}
+                                                        dogPhotoUrl={tx.booking?.dog_photo_url}
                                                         onClick={() => setSelectedTx(tx)}
                                                     />
                                                 ))
@@ -707,7 +708,15 @@ export default function WalletView() {
                         onClose={() => setPaymentToConfirm(null)}
                         PaperProps={{ sx: { bgcolor: '#1A1B1F', borderRadius: 4, minWidth: 320, p: 3 } }}
                     >
-                        <Typography variant="h6" fontWeight="bold" textAlign="center" mb={2}>Confirm Payment</Typography>
+                        <Stack spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                            <Avatar
+                                src={paymentToConfirm?.dog_photo_url ? (paymentToConfirm.dog_photo_url.startsWith('http') ? paymentToConfirm.dog_photo_url : `${API_BASE_URL}${paymentToConfirm.dog_photo_url}`) : ""}
+                                sx={{ width: 80, height: 80, border: '2px solid #D4AF37' }}
+                            >
+                                <Pets sx={{ fontSize: 40 }} />
+                            </Avatar>
+                            <Typography variant="h6" fontWeight="bold" textAlign="center">Confirm Payment</Typography>
+                        </Stack>
 
                         <Typography variant="body2" color="text.secondary" textAlign="center" mb={3}>
                             You are about to pay <span style={{ color: 'white', fontWeight: 'bold' }}>${paymentToConfirm?.total_price.toFixed(2)}</span> to {
@@ -804,7 +813,7 @@ export default function WalletView() {
     );
 }
 
-function HistoryItem({ title, date, amount, isPositive, isPenalty, onClick }: any) {
+function HistoryItem({ title, date, amount, isPositive, isPenalty, dogPhotoUrl, onClick }: any) {
     return (
         <Paper
             onClick={onClick}
@@ -820,10 +829,14 @@ function HistoryItem({ title, date, amount, isPositive, isPenalty, onClick }: an
         >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{
-                        bgcolor: isPositive ? 'rgba(74, 222, 128, 0.1)' : (isPenalty ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)'),
-                        color: isPositive ? '#4ade80' : (isPenalty ? '#ef4444' : 'inherit')
-                    }}>
+                    <Avatar
+                        src={dogPhotoUrl ? (dogPhotoUrl.startsWith('http') ? dogPhotoUrl : `${API_BASE_URL}${dogPhotoUrl}`) : ""}
+                        sx={{
+                            bgcolor: isPositive ? 'rgba(74, 222, 128, 0.1)' : (isPenalty ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)'),
+                            color: isPositive ? '#4ade80' : (isPenalty ? '#ef4444' : 'inherit'),
+                            border: dogPhotoUrl ? '1px solid rgba(212, 175, 55, 0.3)' : 'none'
+                        }}
+                    >
                         {isPositive ? <Add /> : (isPenalty ? <PriorityHigh /> : <AccountBalanceWallet />)}
                     </Avatar>
                     <Box>
