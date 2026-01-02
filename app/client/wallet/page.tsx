@@ -143,7 +143,6 @@ export default function WalletView() {
 
     const handleClose = () => {
         if (step === 2) {
-            // refresh
             fetchProfile();
         }
         setShowApplePay(false);
