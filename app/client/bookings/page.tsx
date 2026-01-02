@@ -442,13 +442,13 @@ export default function BookingsView() {
                                         <Stack direction="row" spacing={2} alignItems="start">
                                             <input type="checkbox" id="policy-cancel" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, cancel: e.target.checked }))} />
                                             <label htmlFor="policy-cancel" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
-                                                I understand a $45 fee applies to cancellations within 72h.
+                                                Confirmed bookings that are cancelled are subject to a $45 fee.
                                             </label>
                                         </Stack>
                                         <Stack direction="row" spacing={2} alignItems="start">
                                             <input type="checkbox" id="policy-noshow" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, noshow: e.target.checked }))} />
                                             <label htmlFor="policy-noshow" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
-                                                No-shows incur a $20 fee and potential account suspension.
+                                                No-shows are subject to a $20 fee and potential suspension from the app.
                                             </label>
                                         </Stack>
                                     </Stack>
@@ -491,7 +491,15 @@ export default function BookingsView() {
                     <DialogContent sx={{ pt: 4, textAlign: 'center', bgcolor: '#1A1B1F' }}>
                         <Dangerous color="error" sx={{ fontSize: 54, mb: 2 }} />
                         <Typography variant="h6" fontWeight="bold">Cancel Reservation?</Typography>
-                        <Typography variant="body2" color="text.secondary">Retract this request?</Typography>
+                        {bookingToCancel?.status === 'Confirmed' ? (
+                            <Alert severity="warning" sx={{ mt: 2, textAlign: 'left', bgcolor: 'rgba(255,152,0,0.1)', color: '#ff9800' }}>
+                                <Typography variant="body2" fontWeight="bold">
+                                    As your booking has been confirmed and we have reserved a spot, cancelling will incur a $45 fee.
+                                </Typography>
+                            </Alert>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">Retract this request?</Typography>
+                        )}
                         <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                             <Button fullWidth variant="outlined" onClick={() => setShowCancelConfirm(false)} disabled={cancelling}>Keep</Button>
                             <Button fullWidth variant="contained" color="error" onClick={handleCancelBooking} disabled={cancelling}>
@@ -676,7 +684,7 @@ function BookingCard({ booking, pets, onCancel }: any) {
 
     return (
         <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
-            {booking.status === 'Pending' && (
+            {(booking.status === 'Pending' || booking.status === 'Confirmed') && (
                 <IconButton size="small" onClick={onCancel} sx={{ position: 'absolute', top: 8, right: 8, color: 'text.secondary', '&:hover': { color: 'error.main' } }}><Close fontSize="small" /></IconButton>
             )}
             <Stack direction="row" spacing={2} alignItems="center">
