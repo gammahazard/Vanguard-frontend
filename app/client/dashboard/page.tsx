@@ -103,12 +103,21 @@ export default function ClientDashboard() {
                 const bookings = await res.json();
 
                 const unpaid = bookings.filter((b: Booking) => {
-                    const s = b.status?.toLowerCase();
-                    return (s === "confirmed" || s === "checked in") && !b.is_paid;
+                    const s = (b.status || '').toLowerCase();
+                    const isCancellation = ['cancelled', 'no-show', 'no show'].includes(s);
+
+                    const isActiveDebt = (s === 'confirmed') && !b.is_paid;
+                    const isCancellationDebt = isCancellation && b.total_price > 0 && !b.is_paid;
+
+                    return isActiveDebt || isCancellationDebt;
                 });
                 setUnpaidBookings(unpaid);
 
-                const total = unpaid.reduce((sum: number, b: Booking) => sum + b.total_price, 0);
+                const total = unpaid.reduce((sum: number, b: Booking) => {
+                    const isCancellation = ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase());
+                    const tax = isCancellation ? 0 : b.total_price * 0.13;
+                    return sum + b.total_price + tax;
+                }, 0);
                 setBalance(total);
 
                 const upcoming = bookings
@@ -657,7 +666,9 @@ export default function ClientDashboard() {
                             {unpaidBookings.length > 0 ? (
                                 unpaidBookings.map((b) => {
                                     const nights = Math.ceil((new Date(b.end_date).getTime() - new Date(b.start_date).getTime()) / (1000 * 60 * 60 * 24));
-                                    const tax = b.total_price * 0.13;
+
+                                    const isCancellation = ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase());
+                                    const tax = isCancellation ? 0 : b.total_price * 0.13;
                                     const grandTotal = b.total_price + tax;
 
                                     return (

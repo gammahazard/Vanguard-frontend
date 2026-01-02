@@ -160,6 +160,7 @@ ssh root@YOUR_SERVER_IP "systemctl stop vanguard && rm ~/backend/kennel.db && sy
 | **Face ID Fails** | Domain mismatch or DB Wipe. | If DB was wiped, keys are gone. Login with Password & Re-register. |
 | **Login Loops** | Token expired. | Use the **"Wipe Cache"** option in the Profile Area (easiest on mobile), or clear LocalStorage manually. |
 | **"Foreign Key Constraints"** | Case Mismatch. | Use `user@email.com` (lowercase) everywhere. Backend now enforces this. |
+| **"Unexpected Token"** | Missing brackets/tags. | **Check syntax first.** 99% of the time it's a missing `}` or `/>`. Don't blame the compiler. |
 | **Vercel Build Failed** | MUI Grid Version Conflict. | **DO NOT USE `Grid`.** Use `Stack` and `Box` (Flexbox) instead. See Section 8. |
 
 ---
