@@ -13,6 +13,7 @@ import {
     Assignment as AssignmentIcon,
     AddAPhoto
 } from "@mui/icons-material";
+import Image from "next/image";
 import { Pet, GuestPet } from "@/types";
 
 interface DailyReportModalProps {
@@ -147,8 +148,14 @@ export default function DailyReportModal({
                             </Button>
                         </label>
                         {reportData.image_url && (
-                            <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', height: 120 }}>
-                                <img src={reportData.image_url} alt="VIP" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', height: 120, position: 'relative' }}>
+                                <Image
+                                    src={reportData.image_url}
+                                    alt="VIP"
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    style={{ objectFit: 'cover' }}
+                                />
                             </Box>
                         )}
                     </Box>
