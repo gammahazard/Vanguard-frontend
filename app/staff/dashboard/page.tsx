@@ -522,7 +522,12 @@ export default function StaffDashboard() {
                         {selectedClient?.pets?.filter((p: any) => !selectedPet || p.id === selectedPet.id).map((pet: any, i: number, arr: any[]) => (
                             <Box key={i} sx={{ mb: 4 }}>
                                 <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 3 }}>
-                                    <Avatar src={pet.image_url || pet.photo_url} sx={{ width: 80, height: 80, border: '2px solid #D4AF37' }} />
+                                    <Avatar
+                                        src={pet.image_url ? (pet.image_url.startsWith('http') ? pet.image_url : `${API_BASE_URL}${pet.image_url}`) : pet.photo_url}
+                                        sx={{ width: 80, height: 80, border: '2px solid #D4AF37', bgcolor: 'rgba(255,255,255,0.05)' }}
+                                    >
+                                        {pet.name[0]}
+                                    </Avatar>
                                     <Box>
                                         <Typography variant="h5" color="white" fontWeight="bold">{pet.name}</Typography>
                                         <Typography color="#D4AF37">{pet.breed}</Typography>

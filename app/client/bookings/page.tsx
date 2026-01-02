@@ -352,7 +352,7 @@ export default function BookingsView() {
                                     return (
                                         <Paper key={pet.id} onClick={() => setFormData(f => ({ ...f, dog_ids: isSelected ? f.dog_ids.filter(id => id !== pet.id) : [...f.dog_ids, pet.id] }))} sx={{ p: 2, borderRadius: 2, border: isSelected ? '2px solid #D4AF37' : '1px solid rgba(255,255,255,0.1)', bgcolor: isSelected ? 'rgba(212, 175, 55, 0.05)' : 'transparent', cursor: 'pointer' }}>
                                             <Stack direction="row" spacing={2} alignItems="center">
-                                                <Avatar src={pet.image_url}>{pet.name[0]}</Avatar>
+                                                <Avatar src={pet.image_url ? (pet.image_url.startsWith('http') ? pet.image_url : `${API_BASE_URL}${pet.image_url}`) : ""}>{pet.name[0]}</Avatar>
                                                 <Box sx={{ flex: 1 }}>
                                                     <Typography variant="body1" fontWeight="bold">{pet.name}</Typography>
                                                     <Typography variant="caption" color="text.secondary">{pet.breed}</Typography>

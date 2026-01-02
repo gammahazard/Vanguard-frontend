@@ -141,7 +141,7 @@ export function useStaffDashboard() {
                     fed: false,
                     walked: false,
                     meds: null,
-                    img: `https://placedog.net/400/300?id=${b.dog_id.charCodeAt(0)}`,
+                    img: b.dog_photo_url ? (b.dog_photo_url.startsWith('http') ? b.dog_photo_url : `${API_BASE_URL}${b.dog_photo_url}`) : `https://placedog.net/400/300?id=${b.dog_id.charCodeAt(0)}`,
                     owner_email: b.user_email
                 }));
                 setGuests(mappedGuests);

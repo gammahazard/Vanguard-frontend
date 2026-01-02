@@ -63,9 +63,12 @@ export default function WalletView() {
             const total = subtotal + tax;
 
             let title = `${b.service_type} (${b.dog_name || 'Pet'})`;
+            let details = isPenalty ? "Penalty Fee" : "Service Payment";
             if (isPenalty) {
-                const baseTitle = status.includes('no') ? "No-Show Fee" : "Cancellation Fee";
+                const isNoShow = status.includes('no');
+                const baseTitle = isNoShow ? "No-Show Penalty" : "Cancellation Penalty";
                 title = `${baseTitle} (PER DOG)`;
+                details = isNoShow ? "No-Show Fee" : "Cancellation After Spots Reserved";
             }
 
             return {
@@ -80,7 +83,7 @@ export default function WalletView() {
                 booking: b,
                 subtotal: subtotal,
                 tax: tax,
-                details: isPenalty ? "Penalty Fee" : "Service Payment"
+                details: details
             };
         })
     ].sort((a: any, b: any) => b.timestamp - a.timestamp); // Newest First

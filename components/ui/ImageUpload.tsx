@@ -135,7 +135,7 @@ export function ImageUpload({ initialUrl, onUploadSuccess, label = "VIP Portrait
                 <Stack direction="row" spacing={3} alignItems="center">
                     <Box sx={{ position: "relative" }}>
                         <Avatar
-                            src={preview || ""}
+                            src={preview ? (preview.startsWith('http') || preview.startsWith('blob:') ? preview : `${API_BASE_URL}${preview}`) : ""}
                             variant="rounded"
                             sx={{
                                 width: 80,
@@ -207,9 +207,9 @@ export function ImageUpload({ initialUrl, onUploadSuccess, label = "VIP Portrait
                             )}
                         </Stack>
                     </Box>
-                </Stack>
-            </Paper>
-        </Box>
+                </Stack >
+            </Paper >
+        </Box >
     );
 }
 

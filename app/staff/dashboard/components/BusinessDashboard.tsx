@@ -46,18 +46,20 @@ export default function BusinessDashboard({ bookings }: BusinessDashboardProps) 
     // 2. Compute Metrics
     const metrics = useMemo(() => {
         const getStats = (monthStr: string) => {
-            const relevant = bookings.filter(b =>
+            const revenue = bookings
+                .filter(b => b.start_date.startsWith(monthStr) && b.is_paid)
+                .reduce((sum, b) => sum + (b.total_price || 0), 0);
+
+            const relevantForStats = bookings.filter(b =>
                 b.start_date.startsWith(monthStr) &&
-                b.status?.toLowerCase() !== 'cancelled' &&
-                b.status?.toLowerCase() !== 'declined'
+                !['cancelled', 'declined', 'no show', 'no-show'].includes(b.status?.toLowerCase() || '')
             );
 
-            const revenue = relevant.reduce((sum, b) => sum + (b.total_price || 0), 0);
-            const clients = new Set(relevant.map(b => b.user_email)).size;
-            const daycare = relevant.filter(b => b.service_type.toLowerCase() === 'daycare').length;
-            const boarding = relevant.filter(b => b.service_type.toLowerCase() === 'boarding').length;
+            const clients = new Set(relevantForStats.map(b => b.user_email)).size;
+            const daycare = relevantForStats.filter(b => b.service_type.toLowerCase() === 'daycare').length;
+            const boarding = relevantForStats.filter(b => b.service_type.toLowerCase() === 'boarding').length;
 
-            return { relevant, revenue, count: relevant.length, clients, daycare, boarding };
+            return { relevant: relevantForStats, revenue, count: relevantForStats.length, clients, daycare, boarding };
         };
 
         const current = getStats(selectedMonth);

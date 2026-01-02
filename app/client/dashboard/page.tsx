@@ -461,9 +461,12 @@ export default function ClientDashboard() {
                                 overflow: 'hidden'
                             }}>
                                 <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{ p: 1.5, bgcolor: '#D4AF37', borderRadius: 3, display: 'flex' }}>
-                                        <Celebration sx={{ color: 'black' }} />
-                                    </Box>
+                                    <Avatar
+                                        src={nextStay.dog_photo_url ? (nextStay.dog_photo_url.startsWith('http') ? nextStay.dog_photo_url : `${API_BASE_URL}${nextStay.dog_photo_url}`) : undefined}
+                                        sx={{ width: 56, height: 56, borderRadius: 2, border: '2px solid #D4AF37', bgcolor: 'rgba(212, 175, 55, 0.1)' }}
+                                    >
+                                        <Pets sx={{ color: '#D4AF37' }} />
+                                    </Avatar>
                                     <Box>
                                         <Typography variant="caption" color="primary" fontWeight="bold">UPCOMING ADVENTURE</Typography>
                                         <Typography variant="body1" fontWeight="bold">
@@ -846,9 +849,11 @@ export default function ClientDashboard() {
                                                     <>
                                                         <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                                                             <PriorityHigh sx={{ fontSize: 16 }} />
-                                                            Penalty Fee
+                                                            {representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION PENALTY" : "NO-SHOW PENALTY"}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
+                                                            <strong>{representative.status?.toLowerCase() === 'cancelled' ? "CANCELLATION AFTER SPOTS WERE RESERVED" : "NO-SHOW FEE"}</strong>
+                                                            <br />
                                                             Fees for {names} ({representative.service_type}) on {new Date(representative.start_date).toLocaleDateString()}.
                                                         </Typography>
                                                     </>
@@ -933,7 +938,7 @@ export default function ClientDashboard() {
                                 {(confirmPayment.bookings || [confirmPayment.booking!]).map((b, i) => (
                                     <Avatar
                                         key={b.id}
-                                        src={b.dog_photo_url || ''}
+                                        src={b.dog_photo_url ? (b.dog_photo_url.startsWith('http') ? b.dog_photo_url : `${API_BASE_URL}${b.dog_photo_url}`) : ""}
                                         sx={{ width: 60, height: 60, border: '2px solid rgba(212, 175, 55, 0.5)', zIndex: 10 - i }}
                                     >
                                         <Pets sx={{ fontSize: 30 }} />

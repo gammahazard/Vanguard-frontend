@@ -12,7 +12,9 @@ import {
     Button,
     Alert
 } from "@mui/material";
+import { Pets } from "@mui/icons-material";
 import { EnrichedBooking } from "@/types";
+import { API_BASE_URL } from "@/lib/api";
 
 interface CheckInModalProps {
     open: boolean;
@@ -44,7 +46,12 @@ export default function CheckInModal({
                     ) : todaysArrivals.map((arrival, i) => (
                         <Paper key={i} sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>
                             <Stack direction="row" spacing={2} alignItems="center">
-                                <Avatar sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37' }}>{arrival.dog_name?.[0]?.toUpperCase() || 'D'}</Avatar>
+                                <Avatar
+                                    src={arrival.dog_photo_url ? (arrival.dog_photo_url.startsWith('http') ? arrival.dog_photo_url : `${API_BASE_URL}${arrival.dog_photo_url}`) : ""}
+                                    sx={{ bgcolor: 'rgba(212, 175, 55, 0.1)', color: '#D4AF37' }}
+                                >
+                                    <Pets sx={{ fontSize: 20 }} />
+                                </Avatar>
                                 <Box>
                                     <Typography variant="body2" fontWeight="bold" color="white">{arrival.dog_name || 'VIP'}</Typography>
                                     <Typography variant="caption" color="text.secondary" display="block">{arrival.service_type}</Typography>
