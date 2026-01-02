@@ -244,7 +244,7 @@ export default function WalletView() {
                             </motion.div>
 
                             {/* Outstanding Debt Indicator */}
-                            {paidBookings.some(b => !b.is_paid && b.total_price > 0) && (
+                            {paidBookings.some(b => !b.is_paid && ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase()) && b.total_price > 0) && (
                                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
                                     <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <Stack direction="row" spacing={2} alignItems="center">
@@ -256,12 +256,14 @@ export default function WalletView() {
                                         </Stack>
                                         <Stack direction="row" spacing={2} alignItems="center">
                                             <Typography variant="h6" fontWeight="900" color="#ef4444">
-                                                ${paidBookings.filter(b => !b.is_paid).reduce((sum, b) => sum + b.total_price, 0).toFixed(2)}
+                                                ${paidBookings
+                                                    .filter(b => !b.is_paid && ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase()))
+                                                    .reduce((sum, b) => sum + b.total_price, 0).toFixed(2)}
                                             </Typography>
                                             <Button
                                                 size="small"
                                                 variant="contained"
-                                                onClick={() => handlePayDebt(paidBookings.find(b => !b.is_paid)?.id || "")}
+                                                onClick={() => handlePayDebt(paidBookings.find(b => !b.is_paid && ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase()))?.id || "")}
                                                 sx={{ bgcolor: '#ef4444', color: 'white', '&:hover': { bgcolor: '#d32f2f' } }}
                                             >
                                                 Pay Now
