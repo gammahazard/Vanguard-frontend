@@ -101,7 +101,7 @@ Our digital "Pawsport" system transforms basic registration into a high-security
 <p align="center"><i>Figure 2: The Digital Pawsport - A secure, biometric-inspired profile for every VIP guest.</i></p>
 
 *   **Security Strip Design**: Every pet is assigned a unique cryptographic VIP ID.
-*   [Compliance Tracking](#): At-a-glance verification of Vaccinations, Microchips, and Care Requirements.
+*   **Compliance Tracking**: At-a-glance verification of Vaccinations, Microchips, and Care Requirements.
 *   **Biometric Grid**: Real-time tracking of age, weight, and temperament classification.
 *   **Machine-Readable Integrity**: Footer metadata designed for internal auditing and verification.
 
@@ -212,6 +212,12 @@ The frontend is a high-performance **Next.js 14** application, structured for cl
 
 ---
 
+
+## 🛠️ Development Policy
+
+To maintain system integrity and prevent regressions during complex refactors:
+- **Refactoring Branches**: All architectural changes or significant refactors **MUST** be developed on a separate branch (e.g., `feature/refactor-x`).
+- **Review & Merge**: Changes must be audited and verified before being merged into `main`. Direct refactoring on the main branch is prohibited for critical components.
 
 ---
 
