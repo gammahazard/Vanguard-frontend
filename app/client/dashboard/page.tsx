@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     Box,
@@ -80,7 +80,14 @@ export default function ClientDashboard() {
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
     const [paying, setPaying] = useState(false);
     const [paymentFeedback, setPaymentFeedback] = useState({ open: false, text: "", severity: "success" as "success" | "error" });
-    const [confirmPayment, setConfirmPayment] = useState<{ open: boolean, booking: Booking | null, amount: number, tax: number } | null>(null);
+    const [confirmPayment, setConfirmPayment] = useState<{
+        open: boolean;
+        bookings?: Booking[];
+        booking?: Booking | null;
+        amount: number;
+        tax: number;
+        subtotal?: number;
+    } | null>(null);
 
     useEffect(() => {
         const storedName = typeof window !== 'undefined' ? localStorage.getItem('vanguard_user') : null;
@@ -172,6 +179,48 @@ export default function ClientDashboard() {
         }
     };
 
+    // --- GROUPING LOGIC FOR UNPAID BOOKINGS ---
+    const groupedUnpaidBookings = useMemo(() => {
+        const groups: { [key: string]: Booking[] } = {};
+
+        unpaidBookings.forEach(b => {
+            // Key: Service + Start + End (e.g., "Boarding|2023-10-01|2023-10-05")
+            const key = `${b.service_type}|${b.start_date}|${b.end_date}`;
+            if (!groups[key]) {
+                groups[key] = [];
+            }
+            groups[key].push(b);
+        });
+
+        return Object.values(groups).sort((a, b) => new Date(b[0].start_date).getTime() - new Date(a[0].start_date).getTime());
+    }, [unpaidBookings]);
+
+    const handlePayGroup = (group: Booking[]) => {
+        if (!group.length) return;
+
+        let subtotal = 0;
+        let tax = 0;
+
+        group.forEach(b => {
+            const status = (b.status || '').toLowerCase();
+            const isPenalty = ['cancelled', 'no-show', 'no show'].includes(status);
+            let bTax = 0;
+            if (!isPenalty) {
+                bTax = b.total_price * 0.13;
+            }
+            subtotal += b.total_price;
+            tax += bTax;
+        });
+
+        setConfirmPayment({
+            open: true,
+            bookings: group,
+            amount: subtotal + tax,
+            tax: tax,
+            subtotal: subtotal
+        });
+    };
+
     const handlePayBooking = (booking: Booking) => {
         const isCancellation = ['cancelled', 'no-show', 'no show'].includes((booking.status || '').toLowerCase());
         const tax = isCancellation ? 0 : booking.total_price * 0.13;
@@ -185,13 +234,18 @@ export default function ClientDashboard() {
     };
 
     const executePayment = async () => {
-        if (!confirmPayment?.booking) return;
+        if (!confirmPayment) return;
 
         setPaying(true);
         try {
+            // Support both single booking (legacy) and group
+            const ids = confirmPayment.bookings ? confirmPayment.bookings.map(b => b.id) : (confirmPayment.booking ? [confirmPayment.booking.id] : []);
+
+            if (ids.length === 0) return;
+
             const res = await authenticatedFetch(`/api/wallet/pay`, {
                 method: 'POST',
-                body: JSON.stringify({ booking_id: confirmPayment.booking.id })
+                body: JSON.stringify({ booking_ids: ids })
             });
 
             if (res.ok) {
@@ -681,17 +735,32 @@ export default function ClientDashboard() {
                         <Divider sx={{ opacity: 0.1 }} />
 
                         <Stack spacing={2}>
-                            {unpaidBookings.length > 0 ? (
-                                unpaidBookings.map((b) => {
-                                    const nights = Math.ceil((new Date(b.end_date).getTime() - new Date(b.start_date).getTime()) / (1000 * 60 * 60 * 24));
+                            {groupedUnpaidBookings.length > 0 ? (
+                                groupedUnpaidBookings.map((group, idx) => {
+                                    const representative = group[0];
+                                    const nights = Math.ceil((new Date(representative.end_date).getTime() - new Date(representative.start_date).getTime()) / (1000 * 60 * 60 * 24));
 
-                                    const isCancellation = ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase());
-                                    const tax = isCancellation ? 0 : b.total_price * 0.13;
-                                    const grandTotal = b.total_price + tax;
+                                    // Calculate Group Totals
+                                    let groupSubtotal = 0;
+                                    let groupTax = 0;
+                                    let groupTotal = 0;
+                                    let hasPenalty = false;
+
+                                    group.forEach(b => {
+                                        const isPenalty = ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase());
+                                        if (isPenalty) hasPenalty = true;
+                                        const tax = isPenalty ? 0 : b.total_price * 0.13;
+                                        groupSubtotal += b.total_price;
+                                        groupTax += tax;
+                                    });
+                                    groupTotal = groupSubtotal + groupTax;
+
+                                    // Formatted Names
+                                    const names = group.map(b => b.dog_name || 'Pet').join(', ');
 
                                     return (
                                         <Paper
-                                            key={b.id}
+                                            key={idx}
                                             variant="outlined"
                                             sx={{
                                                 p: 2,
@@ -704,48 +773,42 @@ export default function ClientDashboard() {
                                             }}
                                         >
                                             <Box>
-                                                {['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase()) ? (
+                                                {hasPenalty ? (
                                                     <>
                                                         <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                                                             <PriorityHigh sx={{ fontSize: 16 }} />
-                                                            {(b.status || '').toLowerCase().includes('no') ? 'No-Show Fee' : 'Cancellation Fee'}
+                                                            Penalty Fee
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
-                                                            {(b.status || '').toLowerCase().includes('no')
-                                                                ? `Missed appointment fee for ${b.service_type} on ${new Date(b.start_date).toLocaleDateString()}.`
-                                                                : `Fee for cancelled ${b.service_type} stay reserved for ${new Date(b.start_date).toLocaleDateString()}.`
-                                                            }
+                                                            Fees for {names} ({representative.service_type}) on {new Date(representative.start_date).toLocaleDateString()}.
                                                         </Typography>
                                                     </>
                                                 ) : (
                                                     <>
                                                         <Stack direction="row" alignItems="center" spacing={1}>
                                                             <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                                                                {b.dog_name || "Pet"} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
-                                                                    {formatDateTimeEST(b.start_date).split(',')[0]} - {formatDateTimeEST(b.end_date).split(',')[0]} ({nights} nights)
+                                                                {names} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
+                                                                    {formatDateTimeEST(representative.start_date).split(',')[0]} - {formatDateTimeEST(representative.end_date).split(',')[0]} ({nights} nights)
                                                                 </span>
                                                             </Typography>
-                                                            <Chip label={b.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                                                            <Chip label={representative.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
                                                         </Stack>
-                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                                                            {new Date(b.start_date).toLocaleDateString()} - {new Date(b.end_date).toLocaleDateString()} • <strong>{nights} Nights</strong>
-                                                        </Typography>
                                                         <Stack direction="row" spacing={2} sx={{ mt: 1, opacity: 0.8 }}>
-                                                            <Typography variant="caption">Subtotal: ${b.total_price.toFixed(2)}</Typography>
-                                                            <Typography variant="caption">HST (13%): ${tax.toFixed(2)}</Typography>
+                                                            <Typography variant="caption">Subtotal: ${groupSubtotal.toFixed(2)}</Typography>
+                                                            <Typography variant="caption">HST (13%): ${groupTax.toFixed(2)}</Typography>
                                                         </Stack>
                                                     </>
                                                 )}
                                                 <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
-                                                    Total Due: ${grandTotal.toFixed(2)}
+                                                    Total Due: ${groupTotal.toFixed(2)}
                                                 </Typography>
                                             </Box>
 
                                             <Button
                                                 variant="contained"
                                                 size="small"
-                                                disabled={paying || walletBalance < grandTotal}
-                                                onClick={() => handlePayBooking(b)}
+                                                disabled={paying || walletBalance < groupTotal}
+                                                onClick={() => handlePayGroup(group)}
                                                 sx={{
                                                     bgcolor: 'primary.main',
                                                     color: 'background.default',
@@ -755,7 +818,7 @@ export default function ClientDashboard() {
                                                     '&:hover': { bgcolor: '#b5932b' }
                                                 }}
                                             >
-                                                {paying ? <CircularProgress size={16} color="inherit" /> : `Pay $${grandTotal.toFixed(2)}`}
+                                                {paying ? <CircularProgress size={16} color="inherit" /> : `Pay $${groupTotal.toFixed(2)}`}
                                             </Button>
                                         </Paper>
                                     );
@@ -794,47 +857,55 @@ export default function ClientDashboard() {
             >
                 <DialogTitle sx={{ fontWeight: 'bold', pb: 1 }}>Confirm Payment</DialogTitle>
                 <DialogContent>
-                    {confirmPayment?.booking && (
+                    {(confirmPayment?.bookings || confirmPayment?.booking) && (
                         <Stack spacing={2} sx={{ pt: 1, alignItems: 'center' }}>
-                            <Avatar
-                                src={confirmPayment.booking.dog_photo_url || ''}
-                                sx={{ width: 80, height: 80, mb: 1, border: '2px solid rgba(212, 175, 55, 0.5)' }}
-                            >
-                                <Pets sx={{ fontSize: 40 }} />
-                            </Avatar>
+                            {/* Stack Avatars if multiple */}
+                            <Stack direction="row" spacing={-1} justifyContent="center" mb={1}>
+                                {(confirmPayment.bookings || [confirmPayment.booking!]).map((b, i) => (
+                                    <Avatar
+                                        key={b.id}
+                                        src={b.dog_photo_url || ''}
+                                        sx={{ width: 60, height: 60, border: '2px solid rgba(212, 175, 55, 0.5)', zIndex: 10 - i }}
+                                    >
+                                        <Pets sx={{ fontSize: 30 }} />
+                                    </Avatar>
+                                ))}
+                            </Stack>
+
                             <Typography variant="body1" textAlign="center">
-                                You are settling a balance for <strong>{confirmPayment.booking.dog_name || 'Pet'}</strong>.
+                                You are settling a balance for <strong>{(confirmPayment.bookings || [confirmPayment.booking!]).map(b => b.dog_name || 'Pet').join(', ')}</strong>.
                             </Typography>
 
-                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)' }}>
+                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)', width: '100%' }}>
                                 <Stack spacing={1}>
                                     <Stack direction="row" justifyContent="space-between">
                                         <Typography color="text.secondary" variant="body2">Service</Typography>
                                         <Typography variant="body2" fontWeight="medium">
-                                            {confirmPayment.booking.service_type}
-                                            {['cancelled', 'no-show', 'no show'].includes((confirmPayment.booking.status || '').toLowerCase()) ? ' (PER DOG)' : ''}
+                                            {(confirmPayment.bookings || [confirmPayment.booking!])[0].service_type}
+                                            {/* Show PER DOG if any penalty */}
+                                            {(confirmPayment.bookings || [confirmPayment.booking!]).some(b => ['cancelled', 'no-show', 'no show'].includes((b.status || '').toLowerCase())) ? ' (Total)' : ''}
                                         </Typography>
                                     </Stack>
                                     <Divider sx={{ borderStyle: 'dashed' }} />
                                     <Stack direction="row" justifyContent="space-between">
                                         <Typography color="text.secondary">Subtotal</Typography>
-                                        <Typography>${confirmPayment.booking.total_price.toFixed(2)}</Typography>
+                                        <Typography>${(confirmPayment.subtotal || confirmPayment.booking?.total_price || 0).toFixed(2)}</Typography>
                                     </Stack>
                                     <Stack direction="row" justifyContent="space-between">
                                         <Typography color="text.secondary">HST (13%)</Typography>
-                                        <Typography>${confirmPayment.tax.toFixed(2)}</Typography>
+                                        <Typography>${(confirmPayment.tax || 0).toFixed(2)}</Typography>
                                     </Stack>
                                     <Divider />
                                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                                         <Typography fontWeight="bold">Total Charge</Typography>
                                         <Typography fontWeight="bold" color="primary.main" variant="h6">
-                                            ${confirmPayment.amount.toFixed(2)}
+                                            ${(confirmPayment.amount || 0).toFixed(2)}
                                         </Typography>
                                     </Stack>
                                 </Stack>
                             </Paper>
 
-                            <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
+                            <Alert severity="info" sx={{ fontSize: '0.8rem', width: '100%' }}>
                                 This amount will be deducted from your wallet immediately.
                             </Alert>
                         </Stack>

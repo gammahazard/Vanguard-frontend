@@ -44,6 +44,51 @@ export default function WalletView() {
     const [localTransactions, setLocalTransactions] = useState<Transaction[]>([]);
     const [topUpAmount, setTopUpAmount] = useState("");
     const [selectedTx, setSelectedTx] = useState<any>(null);
+    const [filter, setFilter] = useState<'all' | 'payment' | 'deposit'>('all');
+    const [paidBookings, setPaidBookings] = useState<Booking[]>([]);
+
+    // Unified Transaction Logic
+    // We compute this on the fly to keep data sources truthful
+    const allTransactions = [
+        ...localTransactions.map(tx => ({
+            ...tx,
+            type: 'deposit',
+            timestamp: parseInt(tx.id) || Date.now() // Fallback if id isn't timestamp
+        })),
+        ...paidBookings.map(b => {
+            const status = (b.status || '').toLowerCase();
+            const isPenalty = ['cancelled', 'no-show', 'no show'].includes(status);
+            const subtotal = b.total_price;
+            const tax = isPenalty ? 0 : subtotal * 0.13;
+            const total = subtotal + tax;
+
+            let title = `${b.service_type} (${b.dog_name || 'Pet'})`;
+            if (isPenalty) {
+                const baseTitle = status.includes('no') ? "No-Show Fee" : "Cancellation Fee";
+                title = `${baseTitle} (PER DOG)`;
+            }
+
+            return {
+                id: b.id,
+                title: title,
+                date: formatDateTimeEST(b.end_date).split(',')[0], // Display Date
+                timestamp: new Date(b.created_at).getTime(), // Sort Date
+                amount: `- $${total.toFixed(2)}`,
+                isPositive: false,
+                isPenalty: isPenalty,
+                type: 'payment',
+                booking: b,
+                subtotal: subtotal,
+                tax: tax,
+                details: isPenalty ? "Penalty Fee" : "Service Payment"
+            };
+        })
+    ].sort((a: any, b: any) => b.timestamp - a.timestamp); // Newest First
+
+    const filteredTransactions = allTransactions.filter((tx: any) => {
+        if (filter === 'all') return true;
+        return tx.type === filter;
+    });
 
     useEffect(() => {
         fetchProfile();
@@ -52,8 +97,6 @@ export default function WalletView() {
             setLocalTransactions(JSON.parse(stored));
         }
     }, []);
-
-    const [paidBookings, setPaidBookings] = useState<Booking[]>([]);
 
     const fetchProfile = async () => {
         try {
@@ -398,78 +441,71 @@ export default function WalletView() {
 
                             {/* Platform Standards Moved to Booking Flow */}
 
-                            {/* Recent History (Minimalist) */}
-                            {/* Recent History */}
+                            {/* Recent History (Unified & Filterable) */}
                             <Box sx={{ pb: 4 }}>
-                                <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Billing History</Typography>
-                                <Stack spacing={1} sx={{ mt: 2 }}>
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                                    <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>
+                                        History
+                                    </Typography>
+                                    <Stack direction="row" spacing={1}>
+                                        <Chip
+                                            label="All"
+                                            size="small"
+                                            onClick={() => setFilter('all')}
+                                            sx={{
+                                                bgcolor: filter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                color: filter === 'all' ? 'white' : 'text.secondary',
+                                                border: '1px solid',
+                                                borderColor: filter === 'all' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'
+                                            }}
+                                        />
+                                        <Chip
+                                            label="Payments"
+                                            size="small"
+                                            onClick={() => setFilter('payment')}
+                                            sx={{
+                                                bgcolor: filter === 'payment' ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                                                color: filter === 'payment' ? '#ef4444' : 'text.secondary',
+                                                border: '1px solid',
+                                                borderColor: filter === 'payment' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.05)'
+                                            }}
+                                        />
+                                        <Chip
+                                            label="Top-ups"
+                                            size="small"
+                                            onClick={() => setFilter('deposit')}
+                                            sx={{
+                                                bgcolor: filter === 'deposit' ? 'rgba(74, 222, 128, 0.1)' : 'transparent',
+                                                color: filter === 'deposit' ? '#4ade80' : 'text.secondary',
+                                                border: '1px solid',
+                                                borderColor: filter === 'deposit' ? 'rgba(74, 222, 128, 0.3)' : 'rgba(255,255,255,0.05)'
+                                            }}
+                                        />
+                                    </Stack>
+                                </Stack>
+
+                                <Stack spacing={1}>
                                     {loading ? (
                                         <Box sx={{ textAlign: 'center', py: 2 }}>
                                             <CircularProgress size={20} color="inherit" />
                                         </Box>
                                     ) : (
                                         <>
-                                            {/* Local Top Ups */}
-                                            {localTransactions.map(tx => (
-                                                <HistoryItem
-                                                    key={tx.id}
-                                                    title={tx.title}
-                                                    date={tx.date}
-                                                    amount={tx.amount}
-                                                    isPositive={tx.isPositive}
-                                                    onClick={() => setSelectedTx({
-                                                        title: tx.title,
-                                                        date: tx.date,
-                                                        amount: tx.amount,
-                                                        isPositive: tx.isPositive,
-                                                        details: "Wallet top-up via Apple Pay"
-                                                    })}
-                                                />
-                                            ))}
-
-                                            {/* Real Paid Bookings */}
-                                            {paidBookings.length > 0 ? (
-                                                paidBookings.map((b) => {
-                                                    let amount = b.total_price;
-                                                    let tax = 0;
-                                                    let title = `${b.service_type} (${b.dog_name || 'Pet'})`;
-
-                                                    const status = (b.status || '').toLowerCase();
-                                                    const isPenalty = ['cancelled', 'no-show', 'no show'].includes(status);
-
-                                                    if (isPenalty) {
-                                                        const baseTitle = status.includes('no') ? "No-Show Fee" : "Cancellation Fee";
-                                                        title = `${baseTitle} (PER DOG)`;
-                                                        // Penalties are flat fees, tax included/exempt (0 displayed)
-                                                    } else {
-                                                        // Standard service: Add 13% tax for display to match valid payment
-                                                        tax = amount * 0.13;
-                                                        amount = amount + tax;
-                                                    }
-
-                                                    return (
-                                                        <HistoryItem
-                                                            key={b.id}
-                                                            title={title}
-                                                            date={formatDateTimeEST(b.end_date).split(',')[0]}
-                                                            amount={`- $${amount.toFixed(2)}`}
-                                                            isPenalty={isPenalty}
-                                                            onClick={() => setSelectedTx({
-                                                                title,
-                                                                date: formatDateTimeEST(b.end_date),
-                                                                amount: `- $${amount.toFixed(2)}`,
-                                                                subtotal: b.total_price,
-                                                                tax: tax,
-                                                                isPositive: false,
-                                                                booking: b,
-                                                                isPenalty
-                                                            })}
-                                                        />
-                                                    );
-                                                })
+                                            {filteredTransactions.length > 0 ? (
+                                                filteredTransactions.map((tx: any) => (
+                                                    <HistoryItem
+                                                        key={tx.id}
+                                                        title={tx.title}
+                                                        date={tx.date}
+                                                        amount={tx.amount}
+                                                        isPositive={tx.isPositive}
+                                                        isPenalty={tx.isPenalty}
+                                                        onClick={() => setSelectedTx(tx)}
+                                                    />
+                                                ))
                                             ) : (
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', ml: 1 }}>
-                                                    No past billing records found.
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', ml: 1, textAlign: 'center', display: 'block', mt: 2 }}>
+                                                    No transactions found.
                                                 </Typography>
                                             )}
                                         </>
