@@ -39,6 +39,7 @@ export default function WalletView() {
     const [feedback, setFeedback] = useState({ open: false, text: "", severity: "info" as "info" | "success" | "error" | "warning" });
     const [localTransactions, setLocalTransactions] = useState<Transaction[]>([]);
     const [topUpAmount, setTopUpAmount] = useState("");
+    const [selectedTx, setSelectedTx] = useState<any>(null);
 
     useEffect(() => {
         fetchProfile();
@@ -341,8 +342,23 @@ export default function WalletView() {
                                     </Box>
                                 ) : (
                                     <>
-                                        {/* Mock Top Up (Persistent for Demo) */}
-                                        <HistoryItem title="Apple Pay Top Up" date="Today" amount="+ $50.00" isPositive />
+                                        {/* Local Top Ups */}
+                                        {localTransactions.map(tx => (
+                                            <HistoryItem
+                                                key={tx.id}
+                                                title={tx.title}
+                                                date={tx.date}
+                                                amount={tx.amount}
+                                                isPositive={tx.isPositive}
+                                                onClick={() => setSelectedTx({
+                                                    title: tx.title,
+                                                    date: tx.date,
+                                                    amount: tx.amount,
+                                                    isPositive: tx.isPositive,
+                                                    details: "Wallet top-up via Apple Pay"
+                                                })}
+                                            />
+                                        ))}
 
                                         {/* Real Paid Bookings */}
                                         {paidBookings.length > 0 ? (
@@ -375,6 +391,12 @@ export default function WalletView() {
                                                         title={title}
                                                         date={formatDateTimeEST(b.end_date).split(',')[0]} // Use end date as "Billed Date"
                                                         amount={`- $${amount.toFixed(2)}`}
+                                                        onClick={() => setSelectedTx({
+                                                            title,
+                                                            date: formatDateTimeEST(b.end_date),
+                                                            amount: `- $${amount.toFixed(2)}`,
+                                                            booking: b
+                                                        })}
                                                     />
                                                 );
                                             })

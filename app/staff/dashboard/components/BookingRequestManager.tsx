@@ -150,6 +150,7 @@ export default function BookingRequestManager({
                                                     size="small"
                                                     variant="outlined"
                                                     color="warning"
+                                                    disabled={group.start_date > new Date().toISOString().split('T')[0]}
                                                     onClick={() => onAction(group.bookings, 'No Show')}
                                                     sx={{
                                                         minWidth: 'auto',
@@ -158,8 +159,10 @@ export default function BookingRequestManager({
                                                         borderColor: 'rgba(245, 158, 11, 0.5)',
                                                         color: '#f59e0b',
                                                         fontWeight: 'bold',
-                                                        '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.1)' }
+                                                        '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.1)' },
+                                                        '&.Mui-disabled': { borderColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)' }
                                                     }}
+                                                    title={group.start_date > new Date().toISOString().split('T')[0] ? "Cannot mark No Show before check-in date" : "Mark as No Show"}
                                                 >
                                                     No Show
                                                 </Button>
