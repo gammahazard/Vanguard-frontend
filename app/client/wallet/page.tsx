@@ -51,11 +51,35 @@ export default function WalletView() {
         setShowApplePay(true);
         setStep(1);
 
-        // Simulating bank communication
-        setTimeout(async () => {
-            setStep(2);
-            // In production, this verifies the transaction with the bank
-        }, 2500);
+        // API Call to Top Up Not Simulated anymore
+        try {
+            const token = localStorage.getItem('vanguard_token');
+            const res = await fetch(`${API_BASE_URL}/api/wallet/topup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ amount: 50.0 })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // Wait for animation
+                setTimeout(() => {
+                    setStep(2);
+                    setBalance(data.balance); // Update local state immediately
+                }, 2000);
+            } else {
+                setFeedback({ text: "Top-up failed. Try again.", severity: "error", open: true });
+                setStep(0);
+                setShowApplePay(false);
+            }
+        } catch (err) {
+            console.error(err);
+            setFeedback({ text: "Network error.", severity: "error", open: true });
+            setShowApplePay(false);
+        }
     };
 
     const handleClose = () => {
