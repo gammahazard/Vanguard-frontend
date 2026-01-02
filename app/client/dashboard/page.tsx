@@ -29,7 +29,6 @@ import {
 } from "@mui/material";
 import {
     Home,
-    Pets,
     CalendarMonth,
     Person,
     Notifications,
@@ -52,6 +51,7 @@ import {
     Check as CheckIcon,
     PriorityHigh
 } from "@mui/icons-material";
+import Pets from "@mui/icons-material/Pets";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/config";
