@@ -229,13 +229,7 @@ export default function SplashGate() {
                                 </Button>
                             </Link>
 
-                            <Button
-                                onClick={handleOpen}
-                                variant="text"
-                                sx={{ color: 'rgba(212, 175, 55, 0.4)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}
-                            >
-                                Re-install Instructions
-                            </Button>
+
                         </Stack>
                     )}
 
