@@ -195,24 +195,23 @@ Our refined booking flow prioritizes **transparency** and **financial integrity*
 
 ## 🏗️ Technical Structure
 
-*   **/frontend**: Next.js 14 + Tailwind CSS + Framer Motion.
-*   **/frontend/tests**: Publicly auditable integration test logic.
-*   **/docs**: Technical manuals and onboarding documentation.
+The frontend is a high-performance **Next.js 14** application, structured for clarity and professional maintenance.
+
+*   **/app**: the main router containing the app pages.
+*   **/app/client**: the command portal for our vip pet owners.
+    *   `dashboard/`: real-time care feed and dog status.
+    *   `booking/`: the smart reservation wizard.
+    *   `wallet/`: digital payment and balance management.
+*   **/app/staff**: the operational hub for kennel staff and management.
+    *   `dashboard/`: centralized guest oversight.
+    *   `report/`: the digital "moments" creation tool.
+*   **/components**: reusable design tokens (vanguard gold/black).
+*   **/lib**: core logic for api calls, themes, and security helpers.
+*   **/public**: static assets, logos, and pwa manifest files.
+*   **/docs**: technical manuals and onboarding documentation.
 
 ---
 
-## 🚀 Getting Started
-
-Since this is a showcase prototype, you can run the visual interface locally:
-
-1.  **Install Node.js**: [Download Here](https://nodejs.org/) (LTS Version).
-2.  Go to the `frontend` folder:
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
-3.  Open `http://localhost:3000`.
 
 ---
 
