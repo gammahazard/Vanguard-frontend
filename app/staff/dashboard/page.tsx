@@ -26,6 +26,7 @@ import {
     InputAdornment,
     Switch,
     Badge as MuiBadge,
+    Snackbar,
 } from "@mui/material";
 import Image from "next/image";
 import {
@@ -1133,7 +1134,7 @@ export default function StaffDashboard() {
                         <Chip label="Secure View" size="small" variant="outlined" sx={{ borderColor: '#D4AF37', color: '#D4AF37' }} />
                     </DialogTitle>
                     <DialogContent sx={{ bgcolor: '#1a1a1a', pt: 3 }}>
-                        {selectedClient?.pets?.map((pet: any, i: number) => (
+                        {selectedClient?.pets?.filter((p: any) => !selectedPet || p.id === selectedPet.id).map((pet: any, i: number, arr: any[]) => (
                             <Box key={i} sx={{ mb: 4 }}>
                                 <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 3 }}>
                                     <Avatar src={pet.image_url || pet.photo_url} sx={{ width: 80, height: 80, border: '2px solid #D4AF37' }} />
@@ -1641,6 +1642,17 @@ export default function StaffDashboard() {
                     <Button onClick={() => setShowHistoryModal(false)} sx={{ color: 'text.secondary' }}>Close</Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={message.open}
+                autoHideDuration={6000}
+                onClose={() => setMessage({ ...message, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setMessage({ ...message, open: false })} severity={message.severity} sx={{ width: '100%' }}>
+                    {message.text}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }
