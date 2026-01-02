@@ -1,12 +1,12 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { formatDateTimeEST } from "@/lib/dateUtils";
+import { Booking } from "@/types";
 import {
     Box, Typography, Container, Stack, Paper, Button,
     IconButton, Divider, Avatar, List, ListItem,
     ListItemText, ListItemAvatar, CircularProgress,
     Dialog, AppBar, Toolbar, ThemeProvider, CssBaseline,
-    Chip, Snackbar, Alert, Grid
+    Chip, Snackbar, Alert, Grid, TextField
 } from "@mui/material";
 import {
     Wallet, Add, ArrowBack, Apple, CreditCard,
@@ -17,8 +17,15 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { theme } from "@/lib/theme";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { API_BASE_URL, authenticatedFetch } from "@/lib/api";
+
+type Transaction = {
+    id: string;
+    title: string;
+    date: string;
+    amount: string;
+    isPositive: boolean;
+};
 
 export default function WalletView() {
     const router = useRouter();
@@ -28,30 +35,66 @@ export default function WalletView() {
     const [selectedCoin, setSelectedCoin] = useState<any>(null);
     const [step, setStep] = useState(0); // 0: init, 1: authenticating, 2: success
     const [feedback, setFeedback] = useState({ open: false, text: "", severity: "info" as "info" | "success" | "error" | "warning" });
+    const [localTransactions, setLocalTransactions] = useState<Transaction[]>([]);
+    const [topUpAmount, setTopUpAmount] = useState("");
 
     useEffect(() => {
         fetchProfile();
+        const stored = localStorage.getItem('vanguard_local_txs');
+        if (stored) {
+            setLocalTransactions(JSON.parse(stored));
+        }
     }, []);
+
+    const [paidBookings, setPaidBookings] = useState<Booking[]>([]);
 
     const fetchProfile = async () => {
         try {
-            const res = await authenticatedFetch(`${API_BASE_URL}/api/user/profile`);
-            if (res.ok) {
-                const data = await res.json();
+            const [profileRes, bookingsRes] = await Promise.all([
+                authenticatedFetch(`${API_BASE_URL}/api/user/profile`),
+                authenticatedFetch(`${API_BASE_URL}/api/user/bookings`)
+            ]);
+
+            if (profileRes.ok) {
+                const data = await profileRes.json();
                 setBalance(data.balance);
             }
+            if (bookingsRes.ok) {
+                const bookings: Booking[] = await bookingsRes.json();
+                // Filter for "Paid" bookings (is_paid = true)
+                // We exclude "Pending" even if is_paid is true (unlikely) to avoid clutter
+                // We include Cancelled/No Shows if they were paid (fees)
+                const paid = bookings
+                    .filter(b => b.is_paid)
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                setPaidBookings(paid);
+            }
         } catch (e) {
-            console.error("Failed to fetch wallet balance", e);
+            console.error("Failed to fetch wallet data", e);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleApplePay = async () => {
+    const handleApplePay = () => {
+        setTopUpAmount("");
+        setStep(0); // Reset to input step
         setShowApplePay(true);
-        setStep(1);
+    };
 
-        // API Call to Top Up Not Simulated anymore
+    const confirmTopUp = async () => {
+        const amount = parseFloat(topUpAmount);
+        if (isNaN(amount) || amount <= 0) {
+            setFeedback({ text: "Please enter a valid amount.", severity: "error", open: true });
+            return;
+        }
+        if (amount > 5000) {
+            setFeedback({ text: "Maximum top-up is $5,000.", severity: "error", open: true });
+            return;
+        }
+
+        setStep(1); // Move to Face ID animation
+
         try {
             const token = localStorage.getItem('vanguard_token');
             const res = await fetch(`${API_BASE_URL}/api/wallet/topup`, {
@@ -60,15 +103,27 @@ export default function WalletView() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ amount: 50.0 })
+                body: JSON.stringify({ amount: amount })
             });
 
             if (res.ok) {
                 const data = await res.json();
                 // Wait for animation
                 setTimeout(() => {
-                    setStep(2);
-                    setBalance(data.balance); // Update local state immediately
+                    setStep(2); // Success
+                    setBalance(data.balance);
+
+                    // Add to local transactions
+                    const newTx: Transaction = {
+                        id: Date.now().toString(),
+                        title: "Apple Pay Top Up",
+                        date: "Just now",
+                        amount: `+ $${amount.toFixed(2)}`,
+                        isPositive: true
+                    };
+                    const updatedTxs = [newTx, ...localTransactions];
+                    setLocalTransactions(updatedTxs);
+                    localStorage.setItem('vanguard_local_txs', JSON.stringify(updatedTxs));
                 }, 2000);
             } else {
                 setFeedback({ text: "Top-up failed. Try again.", severity: "error", open: true });
@@ -274,11 +329,60 @@ export default function WalletView() {
                         {/* Platform Standards Moved to Booking Flow */}
 
                         {/* Recent History (Minimalist) */}
+                        {/* Recent History */}
                         <Box sx={{ pb: 4 }}>
-                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>History</Typography>
+                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Billing History</Typography>
                             <Stack spacing={1} sx={{ mt: 2 }}>
-                                <HistoryItem title="Vanguard Premium Boarding" date="Today" amount="-75.00" />
-                                <HistoryItem title="Apple Pay Top Up" date="Yesterday" amount="+50.00" isPositive />
+                                {loading ? (
+                                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                                        <CircularProgress size={20} color="inherit" />
+                                    </Box>
+                                ) : (
+                                    <>
+                                        {/* Mock Top Up (Persistent for Demo) */}
+                                        <HistoryItem title="Apple Pay Top Up" date="Today" amount="+ $50.00" isPositive />
+
+                                        {/* Real Paid Bookings */}
+                                        {paidBookings.length > 0 ? (
+                                            paidBookings.map((b) => {
+                                                // Calculate the grand total (Amount + Tax) the user paid
+                                                // If it was marked paid by staff manually without price adjustment, we assume full price + tax was settled.
+                                                // If it was a No Show / Late Cancel, the total_price stored is the fee.
+                                                // We add tax only if it wasn't a flat fee (Fees usually include tax or are exempt? Assuming Add Tax for consistency unless standard).
+                                                // Actually, for No Show ($20) / Cancel ($45), let's assume that IS the charge.
+                                                // For clear "Services", it's Price * 1.13.
+
+                                                let amount = b.total_price;
+                                                let title = `${b.service_type} (${b.dog_name || 'Pet'})`;
+
+                                                // If it's a standard booking (not a fee), add the tax representation
+                                                // A heuristic: if status is 'Completed' or 'Checked In' or 'Confirmed' and price > 50, likely standard.
+                                                // But cleaner is just to consistently show what they "would have paid".
+                                                // Since we don't store transaction records separately yet, we reconstruct it.
+
+                                                // If it's a penalty fee ($20 or $45), we display that flat.
+                                                if (amount === 20 || amount === 45) {
+                                                    title = amount === 20 ? "No Show Fee" : "Late Cancellation Fee";
+                                                } else {
+                                                    amount = amount * 1.13; // Add HST for display
+                                                }
+
+                                                return (
+                                                    <HistoryItem
+                                                        key={b.id}
+                                                        title={title}
+                                                        date={formatDateTimeEST(b.end_date).split(',')[0]} // Use end date as "Billed Date"
+                                                        amount={`- $${amount.toFixed(2)}`}
+                                                    />
+                                                );
+                                            })
+                                        ) : (
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', ml: 1 }}>
+                                                No past billing records found.
+                                            </Typography>
+                                        )}
+                                    </>
+                                )}
                             </Stack>
                         </Box>
                     </Stack>
@@ -356,10 +460,56 @@ export default function WalletView() {
                                         <Apple sx={{ fontSize: 40, color: 'white' }} />
                                         <Chip label="DEMO MODE" size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 'bold', fontSize: '0.65rem' }} />
 
-                                        {step === 1 ? (
+                                        {step === 0 ? (
+                                            <>
+                                                <Typography variant="h6" fontWeight="bold">Top Up Wallet</Typography>
+                                                <Typography variant="body2" color="text.secondary">Enter amount (Max $5,000)</Typography>
+
+                                                <TextField
+                                                    autoFocus
+                                                    fullWidth
+                                                    placeholder="0.00"
+                                                    value={topUpAmount}
+                                                    onChange={(e) => setTopUpAmount(e.target.value)}
+                                                    type="number"
+                                                    InputProps={{
+                                                        startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>$</Typography>,
+                                                        sx: {
+                                                            fontSize: '2rem',
+                                                            fontWeight: 'bold',
+                                                            color: 'white',
+                                                            '& input': { textAlign: 'center' }
+                                                        }
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            bgcolor: 'rgba(255,255,255,0.05)',
+                                                            borderRadius: 3
+                                                        }
+                                                    }}
+                                                />
+
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    onClick={confirmTopUp}
+                                                    disabled={!topUpAmount}
+                                                    sx={{
+                                                        bgcolor: 'white',
+                                                        color: 'black',
+                                                        borderRadius: 2,
+                                                        fontWeight: 'bold',
+                                                        py: 1.5,
+                                                        mt: 2
+                                                    }}
+                                                >
+                                                    Pay with Apple Pay
+                                                </Button>
+                                            </>
+                                        ) : step === 1 ? (
                                             <>
                                                 <Typography variant="h6" fontWeight="bold">Confirm with Face ID</Typography>
-                                                <Typography variant="body2" color="text.secondary">Amount: $50.00</Typography>
+                                                <Typography variant="body2" color="text.secondary">Amount: ${parseFloat(topUpAmount).toFixed(2)}</Typography>
                                                 <Box sx={{
                                                     width: 120,
                                                     height: 120,

@@ -677,7 +677,9 @@ export default function ClientDashboard() {
                                             <Box>
                                                 <Stack direction="row" alignItems="center" spacing={1}>
                                                     <Typography variant="subtitle2" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                                                        {b.dog_name || "Pet"}
+                                                        {b.dog_name || "Pet"} • <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8em', fontWeight: 'normal' }}>
+                                                            {formatDateTimeEST(b.start_date).split(',')[0]} - {formatDateTimeEST(b.end_date).split(',')[0]} ({nights} nights)
+                                                        </span>
                                                     </Typography>
                                                     <Chip label={b.service_type} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.1)' }} />
                                                 </Stack>
@@ -750,7 +752,7 @@ export default function ClientDashboard() {
                 </Alert>
             </Snackbar>
 
-        </ThemeProvider>
+        </ThemeProvider >
     );
 }
 
