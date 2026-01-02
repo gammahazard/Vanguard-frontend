@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { formatDateTimeEST } from "@/lib/dateUtils";
 import { Booking } from "@/types";
