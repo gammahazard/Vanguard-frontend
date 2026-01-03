@@ -235,7 +235,7 @@ export default function StaffDashboard() {
                             guests={guests}
                             loading={loadingGuests}
                             onCheckOut={handleCheckOut}
-                            onToggleAction={handleToggleAction}
+                            onToggleAction={toggleAction}
                             onLogIncident={(guest) => {
                                 setSelectedGuestForIncident(guest);
                                 setShowIncidentModal(true);
