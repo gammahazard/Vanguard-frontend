@@ -268,7 +268,7 @@ export function useStaffDashboard() {
                 body: JSON.stringify({
                     id: Math.random().toString(36).substr(2, 9),
                     booking_id: null,
-                    pet_id: selectedPet?.id || incidentTargetId,
+                    pet_id: (selectedPet?.id || incidentTargetId) === 'general' ? null : (selectedPet?.id || incidentTargetId),
                     content: incidentText,
                     severity: incidentSeverity
                 })
