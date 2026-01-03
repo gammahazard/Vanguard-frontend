@@ -195,20 +195,42 @@ Our refined booking flow prioritizes **transparency** and **financial integrity*
 
 ## 🏗️ Technical Structure
 
-The frontend is a high-performance **Next.js 14** application, structured for clarity and professional maintenance.
+The platform is a high-performance **Next.js 14** frontend paired with a **Rust (Axum)** backend.
 
-*   **/app**: the main router containing the app pages.
-*   **/app/client**: the command portal for our vip pet owners.
-    *   `dashboard/`: real-time care feed and dog status.
-    *   `booking/`: the smart reservation wizard.
-    *   `wallet/`: digital payment and balance management.
-*   **/app/staff**: the operational hub for kennel staff and management.
-    *   `dashboard/`: centralized guest oversight.
-    *   `report/`: the digital "moments" creation tool.
-*   **/components**: reusable design tokens (vanguard gold/black).
-*   **/lib**: core logic for api calls, themes, and security helpers.
-*   **/public**: static assets, logos, and pwa manifest files.
-*   **/docs**: technical manuals and onboarding documentation.
+> 📖 **Detailed Architecture**: See [`/docs/architecture_notes.md`](./docs/architecture_notes.md) for complete file-by-file documentation.
+
+### Frontend Structure
+
+| Folder | Purpose |
+|--------|---------|
+| `/app/client` | **9 routes** - Dashboard, Bookings, Pets, Wallet, Messenger, Profile, etc. |
+| `/app/staff` | **5 routes** - Dashboard (12 modular components), Login, Reports, Audit |
+| `/components/ui` | **7 reusable components** - Navbar, ImageUpload, InstallModal, etc. |
+| `/lib` | **5 utilities** - API wrapper, theme, security sanitization, date helpers |
+| `/types` | TypeScript interfaces synced with backend models |
+| `/docs` | Technical manuals and onboarding documentation |
+
+### Backend Structure (Private Repository)
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `main.rs` | ~490 | Axum router, database init, migrations, seeding |
+| `handlers.rs` | ~2,660 | **61 API handlers** organized by feature |
+| `models.rs` | ~400 | Rust structs matching DB schema + DTOs |
+| `state.rs` | ~20 | AppState with DB pool, WebAuthn, rate limiter |
+| `rate_limit.rs` | ~50 | In-memory IP-based rate limiting middleware |
+
+### Backend API Categories
+
+| Category | Endpoints | Description |
+|----------|-----------|-------------|
+| Auth | 9 | JWT login, WebAuthn/FaceID, registration |
+| Bookings | 7 | Create, status updates, payments, availability |
+| Pets | 4 | CRUD with IDOR protection |
+| Messages | 4 | Real-time chat between clients and staff |
+| Notifications | 4 | System alerts and read tracking |
+| Reports | 4 | Daily care reports and incidents |
+| Admin | 5 | Staff management, audit logs, stats |
 
 ---
 
