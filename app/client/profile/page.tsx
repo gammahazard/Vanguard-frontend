@@ -414,6 +414,31 @@ export default function ProfileView() {
                             </Paper>
                         </Stack>
 
+                        {/* Policies Section */}
+                        <Stack spacing={2}>
+                            <Typography variant="overline" color="text.secondary" fontWeight="bold" letterSpacing={2} sx={{ ml: 1 }}>Booking Policies</Typography>
+                            <Paper sx={{ borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', p: 2.5 }}>
+                                <Stack spacing={2}>
+                                    <Box>
+                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#D4AF37', mb: 0.5 }}>Cancellation Policy</Typography>
+                                        <Typography variant="caption" color="text.secondary" component="div">
+                                            • <b>Pending bookings:</b> Free to cancel<br />
+                                            • <b>Confirmed (unpaid):</b> $45 cancellation fee<br />
+                                            • <b>Confirmed (paid):</b> 20% fee (min $15), 80% refunded to wallet
+                                        </Typography>
+                                    </Box>
+                                    <Divider sx={{ opacity: 0.1 }} />
+                                    <Box>
+                                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#ef4444', mb: 0.5 }}>No-Show Policy</Typography>
+                                        <Typography variant="caption" color="text.secondary" component="div">
+                                            • <b>$25 fee per dog</b> for missed reservations<br />
+                                            • Repeat no-shows may result in account suspension
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+                        </Stack>
+
 
                         <Button
                             variant="outlined"

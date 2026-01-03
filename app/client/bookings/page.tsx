@@ -436,19 +436,19 @@ export default function BookingsView() {
 
                                 <Paper sx={{ p: 2, bgcolor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 2 }}>
                                     <Typography variant="caption" fontWeight="bold" sx={{ color: '#ef4444', display: 'block', mb: 1, letterSpacing: 1 }}>
-                                        PLATFORM STANDARDS
+                                        CANCELLATION & NO-SHOW POLICY
                                     </Typography>
                                     <Stack spacing={1}>
                                         <Stack direction="row" spacing={2} alignItems="start">
                                             <input type="checkbox" id="policy-cancel" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, cancel: e.target.checked }))} />
                                             <label htmlFor="policy-cancel" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
-                                                Confirmed bookings that are cancelled are subject to a $45 fee.
+                                                Cancelling a confirmed booking: <b>$45 fee</b> if unpaid, or <b>20% of payment</b> (min $15) if already paid (80% refunded to wallet).
                                             </label>
                                         </Stack>
                                         <Stack direction="row" spacing={2} alignItems="start">
                                             <input type="checkbox" id="policy-noshow" style={{ marginTop: 4 }} onChange={e => setAgreements(p => ({ ...p, noshow: e.target.checked }))} />
                                             <label htmlFor="policy-noshow" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
-                                                No-shows are subject to a $20 fee and potential suspension from the app.
+                                                No-shows are subject to a <b>$25 fee per dog</b> and potential suspension from the app.
                                             </label>
                                         </Stack>
                                     </Stack>
