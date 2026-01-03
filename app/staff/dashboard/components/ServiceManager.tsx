@@ -77,7 +77,13 @@ export default function ServiceManager({ services: propServices, loading: propLo
                 fetchServices();
                 setEditService(null);
             } else {
-                setError("Failed to update service");
+                if (res.status === 403) {
+                    setError("Permission Denied: Only Owners can update prices.");
+                } else if (res.status === 401) {
+                    setError("Session Expired. Please login again.");
+                } else {
+                    setError("Failed to update service");
+                }
             }
         } catch (e) {
             console.error(e);

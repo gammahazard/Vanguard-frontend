@@ -113,3 +113,4 @@ export default function ClientDirectory({ clients, onViewPets, onChat }: ClientD
         </motion.div>
     );
 }
+
