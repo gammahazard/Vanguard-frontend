@@ -60,7 +60,6 @@ import {
     VisibilityOff,
     PersonAdd,
     Chat as ChatIcon
-    Chat as ChatIcon
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
