@@ -44,6 +44,7 @@ export interface Booking {
     status_note?: string;
     created_at: string;
     is_paid: boolean;
+    refund_amount?: number;
     dog_name?: string;
     dog_photo_url?: string;
 }

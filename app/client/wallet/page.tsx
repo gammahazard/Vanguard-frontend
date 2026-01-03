@@ -88,6 +88,30 @@ export default function WalletView() {
                     tax: tax,
                     details: details
                 };
+            }),
+        // Add refunds for cancelled bookings that have a refund_amount
+        ...paidBookings
+            .filter(b => {
+                const status = (b.status || '').toLowerCase();
+                // Show refund for cancelled bookings with a recorded refund amount
+                return status === 'cancelled' && (b.refund_amount || 0) > 0;
+            })
+            .map(b => {
+                const refundAmount = b.refund_amount || 0;
+
+                return {
+                    id: `refund-${b.id}`,
+                    title: 'Booking Refund',
+                    date: formatDateTimeEST(b.end_date).split(',')[0],
+                    timestamp: new Date(b.created_at).getTime() + 1, // Slightly after the booking
+                    amount: `+ $${refundAmount.toFixed(2)}`,
+                    isPositive: true,
+                    isPenalty: false,
+                    type: 'deposit',
+                    details: 'Refund credited to wallet',
+                    subtotal: refundAmount,
+                    tax: 0
+                };
             })
     ].sort((a: any, b: any) => b.timestamp - a.timestamp); // Newest First
 
