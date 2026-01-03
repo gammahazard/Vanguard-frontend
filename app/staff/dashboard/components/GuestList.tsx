@@ -55,7 +55,7 @@ export default function GuestList({ guests, loading, onToggleAction, onLogIncide
                                 <Typography variant="h5" fontWeight="bold" color="white">{guest.name}</Typography>
                                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>{guest.breed}</Typography>
                             </Box>
-                            <Chip label={guest.status} size="small" sx={{ position: 'absolute', top: 12, right: 12, bgcolor: guest.status === 'Active' ? '#22c55e' : '#f59e0b', color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }} />
+                            <Chip label={guest.status} size="small" sx={{ position: 'absolute', top: 12, right: 12, bgcolor: (guest.status || '').toLowerCase() === 'active' ? '#22c55e' : '#f59e0b', color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }} />
                         </Box>
                         <Box sx={{ p: 2 }}>
                             {guest.alerts.length > 0 && (

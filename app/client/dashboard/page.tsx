@@ -156,7 +156,7 @@ export default function ClientDashboard() {
                     const s = (b.status || '').toLowerCase();
                     const isCancellation = ['cancelled', 'no-show', 'no show'].includes(s);
 
-                    const isActiveDebt = (s === 'confirmed') && !b.is_paid;
+                    const isActiveDebt = (['confirmed', 'checked in', 'checked-in', 'completed'].includes(s)) && !b.is_paid;
                     const isCancellationDebt = isCancellation && b.total_price > 0 && !b.is_paid;
 
                     return isActiveDebt || isCancellationDebt;
@@ -451,7 +451,7 @@ export default function ClientDashboard() {
                             </Stack>
                         </Box>
 
-                        {nextStay && nextStay.status === 'confirmed' && (
+                        {nextStay && (nextStay.status || '').toLowerCase() === 'confirmed' && (
                             <Paper sx={{
                                 p: 2.5,
                                 borderRadius: 4,

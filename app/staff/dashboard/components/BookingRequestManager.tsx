@@ -140,9 +140,9 @@ export default function BookingRequestManager({
                                         </Typography>
                                     </Box>
                                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: { xs: 1, sm: 0 } }}>
-                                        {group.bookings.some((b: any) => b.status === "Checked In") ? (
-                                            <Chip label="Checked In" size="small" color="info" variant="filled" />
-                                        ) : group.bookings.some((b: any) => b.status === "No Show") ? (
+                                        {group.bookings.some((b: any) => (b.status || '').toLowerCase() === "checked in" || (b.status || '').toLowerCase() === "checked-in") ? (
+                                            <Chip label="Checked In" size="small" sx={{ bgcolor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', fontWeight: 'bold' }} />
+                                        ) : group.bookings.some((b: any) => (b.status || '').toLowerCase().includes("no show")) ? (
                                             <Chip label="No Show" size="small" color="warning" variant="filled" />
                                         ) : (
                                             <>
