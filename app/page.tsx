@@ -283,7 +283,7 @@ export default function SplashGate() {
                                     {browserType === 'safari-ios' && (
                                         <>
                                             <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 1:</b> Tap the <b>Share Button</b> <Share sx={{ fontSize: 16, verticalAlign: 'middle', color: '#D4AF37' }} /> at the <b>bottom</b> of your screen.</Typography></Stack>
-                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 2:</b> Scroll down in the menu and tap <b>"Add to Home Screen"</b>.</Typography></Stack>
+                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 2:</b> Scroll down in the menu and tap <b>&quot;Add to Home Screen&quot;</b>.</Typography></Stack>
                                             <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 3:</b> Tap <b>Add</b> in the top right corner.</Typography></Stack>
                                         </>
                                     )}
