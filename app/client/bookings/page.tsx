@@ -344,7 +344,7 @@ export default function BookingsView() {
                             ))}
                         </Stepper>
                     </DialogTitle>
-                    <DialogContent sx={{ minHeight: 450, px: 3 }}>
+                    <DialogContent sx={{ px: 3, py: 2, maxHeight: '55vh', overflowY: 'auto' }}>
                         {activeStep === 0 && (
                             <Stack spacing={1.5} sx={{ mt: 2 }}>
                                 {pets.map(pet => {

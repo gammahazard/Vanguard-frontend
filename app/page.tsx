@@ -198,13 +198,8 @@ export default function SplashGate() {
                                     }
                                 }}
                             >
+                                Install App
                             </Button>
-
-                            <Link href="/client/login" style={{ textDecoration: 'none' }}>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: 'primary.main' }, cursor: 'pointer', transition: 'color 0.2s' }}>
-                                    Already a member? Access Portal
-                                </Typography>
-                            </Link>
                         </Stack>
                     ) : (
                         /* --- PWA MODE: UNIFIED ACCESS --- */
@@ -287,9 +282,9 @@ export default function SplashGate() {
                                     )}
                                     {browserType === 'safari-ios' && (
                                         <>
-                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 1:</b> Tap the <b>Share Button</b> (Rectangle with Arrow) at the bottom center.</Typography></Stack>
-                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 2:</b> Scroll down and tap <b>Add to Home Screen</b>.</Typography></Stack>
-                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 3:</b> Tap <b>Add</b> in the top right.</Typography></Stack>
+                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 1:</b> Tap the <b>Share Button</b> <Share sx={{ fontSize: 16, verticalAlign: 'middle', color: '#D4AF37' }} /> at the <b>bottom</b> of your screen.</Typography></Stack>
+                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 2:</b> Scroll down in the menu and tap <b>"Add to Home Screen"</b>.</Typography></Stack>
+                                            <Stack direction="row" spacing={2}><Typography variant="body2" color="#ccc"><b>Step 3:</b> Tap <b>Add</b> in the top right corner.</Typography></Stack>
                                         </>
                                     )}
                                     {browserType === 'chrome-ios' && (
@@ -319,16 +314,16 @@ export default function SplashGate() {
                                 </Box>
                             )}
 
-                            {/* Safari iOS: Point to Bottom Center */}
+                            {/* Safari iOS: Point to Bottom Right (Share button location) */}
                             {browserType === 'safari-ios' && (
                                 <Box
                                     component={motion.div}
-                                    sx={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', color: '#EF4444', zIndex: 100, pointerEvents: 'none', textAlign: 'center' }}
-                                    animate={{ y: [0, 10, 0] }}
-                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                    sx={{ position: 'fixed', bottom: 12, right: 20, color: '#EF4444', zIndex: 100, pointerEvents: 'none', textAlign: 'center' }}
+                                    animate={{ y: [0, 8, 0] }}
+                                    transition={{ duration: 1.2, repeat: Infinity }}
                                 >
-                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', textShadow: '0 2px 4px black', mb: 0.5 }}>TAP SHARE</Typography>
-                                    <ArrowDownward sx={{ fontSize: 48, filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))' }} />
+                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', textShadow: '0 2px 4px black', mb: 0.5, fontSize: '0.7rem' }}>TAP SHARE</Typography>
+                                    <ArrowDownward sx={{ fontSize: 40, filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))' }} />
                                 </Box>
                             )}
 
